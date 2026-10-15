@@ -1,0 +1,2 @@
+class ManufacturerPolicy < FleetPolicy
+end

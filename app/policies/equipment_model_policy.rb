@@ -1,0 +1,2 @@
+class EquipmentModelPolicy < FleetPolicy
+end

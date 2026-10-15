@@ -1,0 +1,180 @@
+# This file is auto-generated from the current state of the database. Instead
+# of editing this file, please use the migrations feature of Active Record to
+# incrementally modify your database, and then regenerate this schema definition.
+#
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
+# be faster and is potentially less error prone than running all of your
+# migrations from scratch. Old migrations may fail to apply correctly if those
+# migrations use external dependencies or application code.
+#
+# It's strongly recommended that you check this file into your version control system.
+
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_223112) do
+  create_table "department_memberships", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "department_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["department_id"], name: "index_department_memberships_on_department_id"
+    t.index ["user_id", "department_id"], name: "index_department_memberships_on_user_id_and_department_id", unique: true
+    t.index ["user_id"], name: "index_department_memberships_on_user_id"
+  end
+
+  create_table "departments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.integer "parent_id"
+    t.integer "manager_id"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_departments_on_code", unique: true
+    t.index ["manager_id"], name: "index_departments_on_manager_id"
+    t.index ["name"], name: "index_departments_on_name", unique: true
+    t.index ["parent_id"], name: "index_departments_on_parent_id"
+  end
+
+  create_table "equipment_categories", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "code_prefix", null: false
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code_prefix"], name: "index_equipment_categories_on_code_prefix", unique: true
+    t.index ["name"], name: "index_equipment_categories_on_name", unique: true
+  end
+
+  create_table "equipment_code_counters", force: :cascade do |t|
+    t.integer "category_id", null: false
+    t.integer "manufacturer_id", null: false
+    t.integer "last_number", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id", "manufacturer_id"], name: "idx_on_category_id_manufacturer_id_6c6dbb9b4e", unique: true
+    t.index ["category_id"], name: "index_equipment_code_counters_on_category_id"
+    t.index ["manufacturer_id"], name: "index_equipment_code_counters_on_manufacturer_id"
+  end
+
+  create_table "equipment_models", force: :cascade do |t|
+    t.integer "manufacturer_id", null: false
+    t.integer "category_id", null: false
+    t.string "name", null: false
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_equipment_models_on_category_id"
+    t.index ["manufacturer_id", "name"], name: "index_equipment_models_on_manufacturer_id_and_name", unique: true
+    t.index ["manufacturer_id"], name: "index_equipment_models_on_manufacturer_id"
+  end
+
+  create_table "equipment_moves", force: :cascade do |t|
+    t.integer "equipment_id", null: false
+    t.integer "from_location_id"
+    t.integer "to_location_id", null: false
+    t.integer "user_id"
+    t.datetime "moved_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["equipment_id"], name: "index_equipment_moves_on_equipment_id"
+    t.index ["from_location_id"], name: "index_equipment_moves_on_from_location_id"
+    t.index ["to_location_id"], name: "index_equipment_moves_on_to_location_id"
+    t.index ["user_id"], name: "index_equipment_moves_on_user_id"
+  end
+
+  create_table "equipments", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "serial_number"
+    t.integer "equipment_model_id", null: false
+    t.integer "location_id", null: false
+    t.string "status", default: "in_service", null: false
+    t.string "criticality", default: "medium", null: false
+    t.date "acquired_on"
+    t.date "commissioned_on"
+    t.date "warranty_ends_on"
+    t.date "decommissioned_on"
+    t.text "notes"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_equipments_on_code", unique: true
+    t.index ["equipment_model_id", "serial_number"], name: "index_equipments_on_equipment_model_id_and_serial_number", unique: true
+    t.index ["equipment_model_id"], name: "index_equipments_on_equipment_model_id"
+    t.index ["location_id"], name: "index_equipments_on_location_id"
+    t.index ["status"], name: "index_equipments_on_status"
+  end
+
+  create_table "locations", force: :cascade do |t|
+    t.integer "department_id", null: false
+    t.string "name", null: false
+    t.string "code", null: false
+    t.integer "referent_id"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["department_id", "code"], name: "index_locations_on_department_id_and_code", unique: true
+    t.index ["department_id"], name: "index_locations_on_department_id"
+    t.index ["referent_id"], name: "index_locations_on_referent_id"
+  end
+
+  create_table "manufacturers", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_manufacturers_on_code", unique: true
+    t.index ["name"], name: "index_manufacturers_on_name", unique: true
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "name", default: "", null: false
+    t.string "role", default: "reporter", null: false
+    t.date "valid_until"
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["role"], name: "index_users_on_role"
+    t.index ["valid_until"], name: "index_users_on_valid_until"
+  end
+
+  create_table "versions", force: :cascade do |t|
+    t.string "whodunnit"
+    t.datetime "created_at"
+    t.bigint "item_id", null: false
+    t.string "item_type", null: false
+    t.string "event", null: false
+    t.text "object", limit: 1073741823
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+  end
+
+  add_foreign_key "department_memberships", "departments"
+  add_foreign_key "department_memberships", "users"
+  add_foreign_key "departments", "departments", column: "parent_id"
+  add_foreign_key "departments", "users", column: "manager_id"
+  add_foreign_key "equipment_code_counters", "equipment_categories", column: "category_id"
+  add_foreign_key "equipment_code_counters", "manufacturers"
+  add_foreign_key "equipment_models", "equipment_categories", column: "category_id"
+  add_foreign_key "equipment_models", "manufacturers"
+  add_foreign_key "equipment_moves", "equipments"
+  add_foreign_key "equipment_moves", "locations", column: "from_location_id"
+  add_foreign_key "equipment_moves", "locations", column: "to_location_id"
+  add_foreign_key "equipment_moves", "users"
+  add_foreign_key "equipments", "equipment_models"
+  add_foreign_key "equipments", "locations"
+  add_foreign_key "locations", "departments"
+  add_foreign_key "locations", "users", column: "referent_id"
+  add_foreign_key "sessions", "users"
+end

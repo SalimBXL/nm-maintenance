@@ -1,0 +1,51 @@
+<% content_for :title, "Utilisateurs" %>
+
+<%= render "admin/resources/tabs" %>
+
+<div class="page-title">
+  <h1>Utilisateurs</h1>
+  <%= link_to "Nouvel utilisateur", new_admin_user_path, class: "button" %>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>E-mail</th>
+        <th>Rôle</th>
+        <th>Départements</th>
+        <th>Validité</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr class="<%= "archived" unless user.active? %>">
+          <td>
+            <%= user.name %>
+            <% unless user.active? %><span class="badge badge-archived">Non actif</span><% end %>
+          </td>
+          <td><%= user.email_address %></td>
+          <td><%= role_label(user.role) %></td>
+          <td><%= user.departments.map(&:name).sort.join(", ").presence || "—" %></td>
+          <td><%= validity_label(user) %></td>
+          <td class="row-actions">
+            <%= link_to "Modifier", edit_admin_user_path(user) %>
+            <% if user.active? %>
+              <%= button_to "Désactiver", deactivate_admin_user_path(user), method: :post, class: "link-button dark",
+                            form: { data: { turbo_confirm: "Désactiver le compte de #{user.name} ?" } } %>
+            <% elsif user.valid_until.present? %>
+              <%= button_to "Réactiver", reactivate_admin_user_path(user), method: :post, class: "link-button dark" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<p class="hint">
+  Un compte n'est jamais supprimé : il est non actif dès que sa date de fin de validité est dépassée
+  (il ne peut plus se connecter ; son historique est conservé).
+</p>

@@ -1,0 +1,6 @@
+<% content_for :title, "Nouvel équipement" %>
+
+<p class="breadcrumb"><%= link_to "← Parc d'équipements", equipments_path %></p>
+<h1>Nouvel équipement</h1>
+
+<%= render "form", equipment: @equipment %>

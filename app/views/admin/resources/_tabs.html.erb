@@ -1,0 +1,5 @@
+<nav class="tabs">
+  <% admin_tabs.each do |label, path, current| %>
+    <%= link_to label, path, class: ("current" if current) %>
+  <% end %>
+</nav>

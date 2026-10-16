@@ -1,0 +1,90 @@
+<%= form_with model: equipment, class: "form" do |f| %>
+  <% if equipment.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% equipment.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if equipment.new_record? %>
+    <div class="field">
+      <%= f.label :equipment_model_id, "Modèle" %>
+      <%= f.select :equipment_model_id,
+                   @models.map { |model| ["#{model.manufacturer.name} – #{model.name} (#{model.category.name})", model.id] },
+                   { include_blank: "Choisir un modèle…" } %>
+      <small>Le code interne est généré automatiquement à partir du type et du fabricant.</small>
+    </div>
+  <% else %>
+    <div class="field">
+      <label>Code interne</label>
+      <strong><%= equipment.code %></strong>
+    </div>
+    <div class="field">
+      <label>Modèle</label>
+      <span><%= equipment.equipment_model.display_name %> (<%= equipment.category.name %>)</span>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :location_id, "Local" %>
+    <%= f.select :location_id,
+                 @locations.map { |location| ["#{location.department.name} / #{location.name}", location.id] },
+                 { include_blank: "Choisir un local…" } %>
+    <% if equipment.persisted? %>
+      <small>Un changement de local est enregistré dans l'historique des déplacements.</small>
+    <% end %>
+  </div>
+
+  <div class="field">
+    <%= f.label :serial_number, "Numéro de série" %>
+    <%= f.text_field :serial_number %>
+  </div>
+
+  <div class="field">
+    <%= f.label :criticality, "Criticité" %>
+    <%= f.select :criticality, Equipment.criticalities.keys.map { |key| [criticality_label(key), key] } %>
+  </div>
+
+  <% if equipment.persisted? %>
+    <div class="field">
+      <%= f.label :status, "Statut" %>
+      <%= f.select :status, Equipment.statuses.keys.map { |key| [status_label(key), key] } %>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :acquired_on, "Date d'acquisition" %>
+    <%= f.date_field :acquired_on %>
+  </div>
+
+  <div class="field">
+    <%= f.label :commissioned_on, "Date de mise en service" %>
+    <%= f.date_field :commissioned_on %>
+  </div>
+
+  <div class="field">
+    <%= f.label :warranty_ends_on, "Fin de garantie" %>
+    <%= f.date_field :warranty_ends_on %>
+  </div>
+
+  <% if equipment.persisted? %>
+    <div class="field">
+      <%= f.label :decommissioned_on, "Date de mise hors service" %>
+      <%= f.date_field :decommissioned_on %>
+      <small>Obligatoire si le statut est « Hors service ».</small>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :notes, "Notes" %>
+    <%= f.text_area :notes, rows: 4 %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit equipment.new_record? ? "Créer l'équipement" : "Enregistrer", class: "button" %>
+    <%= link_to "Annuler", equipment.new_record? ? equipments_path : equipment_path(equipment) %>
+  </div>
+<% end %>

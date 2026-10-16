@@ -1,0 +1,6 @@
+<% content_for :title, "Modifier #{@equipment.code}" %>
+
+<p class="breadcrumb"><%= link_to "← #{@equipment.code}", equipment_path(@equipment) %></p>
+<h1>Modifier <%= @equipment.code %></h1>
+
+<%= render "form", equipment: @equipment %>

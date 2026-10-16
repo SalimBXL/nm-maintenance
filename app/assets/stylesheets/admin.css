@@ -1,0 +1,19 @@
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--bordure);
+}
+.tabs a {
+  padding: 0.5rem 0.9rem;
+  text-decoration: none;
+  color: var(--gris);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+.tabs a.current { color: var(--bleu); border-bottom-color: var(--bleu); font-weight: 600; }
+
+.row-actions { display: flex; gap: 0.9rem; align-items: center; justify-content: flex-end; }
+.row-actions form { margin: 0; }
+.link-button.dark { color: var(--bleu); }

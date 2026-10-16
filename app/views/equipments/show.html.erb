@@ -1,0 +1,71 @@
+<% content_for :title, @equipment.code %>
+
+<p class="breadcrumb"><%= link_to "← Parc d'équipements", equipments_path %></p>
+
+<div class="page-title">
+  <h1>
+    <%= @equipment.code %>
+    <%= status_badge(@equipment.status) %>
+    <% if @equipment.archived? %><span class="badge badge-archived">Archivé</span><% end %>
+  </h1>
+
+  <div class="actions">
+    <% if policy(@equipment).update? %>
+      <%= link_to "Modifier", edit_equipment_path(@equipment), class: "button" %>
+    <% end %>
+    <% if policy(@equipment).archive? %>
+      <% if @equipment.archived? %>
+        <%= button_to "Réactiver", unarchive_equipment_path(@equipment), method: :post, class: "button secondary" %>
+      <% else %>
+        <%= button_to "Archiver", archive_equipment_path(@equipment), method: :post, class: "button secondary",
+                      form: { data: { turbo_confirm: "Archiver cet équipement ?" } } %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<section class="card">
+  <h2>Informations</h2>
+  <dl class="details">
+    <dt>Catégorie</dt><dd><%= @equipment.category.name %></dd>
+    <dt>Fabricant</dt><dd><%= @equipment.manufacturer.name %></dd>
+    <dt>Modèle</dt><dd><%= @equipment.equipment_model.name %></dd>
+    <dt>Numéro de série</dt><dd><%= @equipment.serial_number.presence || "—" %></dd>
+    <dt>Local</dt><dd><%= location_label(@equipment.location) %></dd>
+    <dt>Criticité</dt><dd><%= criticality_label(@equipment.criticality) %></dd>
+    <dt>Date d'acquisition</dt><dd><%= format_date(@equipment.acquired_on) %></dd>
+    <dt>Mise en service</dt><dd><%= format_date(@equipment.commissioned_on) %></dd>
+    <dt>Fin de garantie</dt><dd><%= format_date(@equipment.warranty_ends_on) %></dd>
+    <% if @equipment.decommissioned? %>
+      <dt>Mise hors service</dt><dd><%= format_date(@equipment.decommissioned_on) %></dd>
+    <% end %>
+    <dt>Notes</dt><dd><%= @equipment.notes.presence || "—" %></dd>
+  </dl>
+</section>
+
+<section class="card">
+  <h2>Historique des déplacements</h2>
+  <% if @moves.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>De</th><th>Vers</th><th>Par</th></tr>
+        </thead>
+        <tbody>
+          <% @moves.each do |move| %>
+            <tr>
+              <td><%= format_time(move.moved_at) %></td>
+              <td><%= location_label(move.from_location) %></td>
+              <td><%= location_label(move.to_location) %></td>
+              <td><%= move.user&.name || "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucun déplacement enregistré.</p>
+  <% end %>
+</section>
+
+<p class="hint">Les incidents, interventions et documents de cet équipement seront ajoutés dans les prochaines étapes.</p>

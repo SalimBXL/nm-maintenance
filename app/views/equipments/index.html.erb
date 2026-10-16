@@ -1,0 +1,79 @@
+<% content_for :title, "Parc d'équipements" %>
+
+<div class="page-title">
+  <h1>Parc d'équipements</h1>
+  <% if policy(Equipment).create? %>
+    <%= link_to "Nouvel équipement", new_equipment_path, class: "button" %>
+  <% end %>
+</div>
+
+<%= form_with url: equipments_path, method: :get, class: "filters" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Code, n° de série, modèle, fabricant…" %>
+
+  <%= f.select :department_id,
+               options_from_collection_for_select(@departments, :id, :name, params[:department_id]),
+               { include_blank: "Tous les départements" } %>
+
+  <%= f.select :category_id,
+               options_from_collection_for_select(@categories, :id, :name, params[:category_id]),
+               { include_blank: "Toutes les catégories" } %>
+
+  <%= f.select :status,
+               options_for_select(Equipment.statuses.keys.map { |key| [status_label(key), key] }, params[:status]),
+               { include_blank: "Tous les statuts" } %>
+
+  <label class="inline">
+    <%= f.check_box :archived, { checked: params[:archived] == "1" }, "1", nil %>
+    Inclure les archivés
+  </label>
+
+  <%= f.submit "Filtrer", name: nil %>
+  <%= link_to "Réinitialiser", equipments_path %>
+<% end %>
+
+<p class="count"><%= @total %> équipement<%= "s" if @total > 1 %></p>
+
+<% if @equipments.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Catégorie</th>
+          <th>Fabricant / modèle</th>
+          <th>Département / local</th>
+          <th>N° de série</th>
+          <th>Statut</th>
+          <th>Criticité</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @equipments.each do |equipment| %>
+          <tr class="<%= "archived" if equipment.archived? %>">
+            <td><%= link_to equipment.code, equipment %></td>
+            <td><%= equipment.category.name %></td>
+            <td><%= equipment.manufacturer.name %> – <%= equipment.equipment_model.name %></td>
+            <td><%= location_label(equipment.location) %></td>
+            <td><%= equipment.serial_number.presence || "—" %></td>
+            <td><%= status_badge(equipment.status) %></td>
+            <td><%= criticality_label(equipment.criticality) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @pages > 1 %>
+    <nav class="pagination">
+      <% if @page > 1 %>
+        <%= link_to "← Précédent", equipments_path(request.query_parameters.merge(page: @page - 1)) %>
+      <% end %>
+      <span>Page <%= @page %> sur <%= @pages %></span>
+      <% if @page < @pages %>
+        <%= link_to "Suivant →", equipments_path(request.query_parameters.merge(page: @page + 1)) %>
+      <% end %>
+    </nav>
+  <% end %>
+<% else %>
+  <p class="empty">Aucun équipement ne correspond à ces critères.</p>
+<% end %>

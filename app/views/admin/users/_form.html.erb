@@ -1,0 +1,61 @@
+<%= form_with model: [:admin, @user], class: "form" do |f| %>
+  <% if @user.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% @user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name, "Nom" %>
+    <%= f.text_field :name %>
+  </div>
+
+  <div class="field">
+    <%= f.label :email_address, "Adresse e-mail" %>
+    <%= f.email_field :email_address, autocomplete: "off" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :role, "Rôle" %>
+    <%= f.select :role, User.roles.keys.map { |key| [role_label(key), key] } %>
+  </div>
+
+  <div class="field">
+    <%= f.label :valid_until, "Date de fin de validité" %>
+    <%= f.date_field :valid_until %>
+    <small>Facultative. Le compte reste actif le jour de cette date, puis ne peut plus se connecter. Laisser vide pour un compte sans limite.</small>
+  </div>
+
+  <div class="field">
+    <label>Départements</label>
+    <%= hidden_field_tag "user[department_ids][]", "" %>
+    <% @departments.each do |department| %>
+      <label class="inline">
+        <%= check_box_tag "user[department_ids][]", department.id, @selected_department_ids.include?(department.id),
+                          id: "user_department_ids_#{department.id}" %>
+        <%= department.name %>
+      </label>
+    <% end %>
+    <small>Les droits pourront être limités aux départements cochés.</small>
+  </div>
+
+  <div class="field">
+    <%= f.label :password, "Mot de passe" %>
+    <%= f.password_field :password, autocomplete: "new-password" %>
+    <% if @user.persisted? %><small>Laisser vide pour ne pas le modifier.</small><% end %>
+  </div>
+
+  <div class="field">
+    <%= f.label :password_confirmation, "Confirmation du mot de passe" %>
+    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit @user.new_record? ? "Créer le compte" : "Enregistrer", class: "button" %>
+    <%= link_to "Annuler", admin_users_path %>
+  </div>
+<% end %>

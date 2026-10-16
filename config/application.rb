@@ -23,6 +23,7 @@ module NmMaintenance
     #
     config.time_zone = "Europe/Brussels"
     config.active_record.default_timezone = :local
+    config.i18n.default_locale = :fr
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end

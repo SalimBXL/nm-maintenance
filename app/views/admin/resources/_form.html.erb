@@ -1,0 +1,36 @@
+<%= form_with model: [:admin, @record], class: "form" do |f| %>
+  <% if @record.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% @record.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% fields.each do |field| %>
+    <div class="field">
+      <% if field[:create_only] && @record.persisted? %>
+        <label><%= field[:label] %></label>
+        <strong><%= readonly_value(@record, field) %></strong>
+      <% else %>
+        <%= f.label field[:name], field[:label] %>
+        <% if field[:type] == :textarea %>
+          <%= f.text_area field[:name], rows: 3 %>
+        <% elsif field[:type] == :select %>
+          <%= f.select field[:name], (@collections || {}).fetch(field[:collection], []),
+                       { include_blank: field[:blank] || (@record.new_record? ? "Choisir…" : false) } %>
+        <% else %>
+          <%= f.text_field field[:name] %>
+        <% end %>
+      <% end %>
+      <% if field[:hint] %><small><%= field[:hint] %></small><% end %>
+    </div>
+  <% end %>
+
+  <div class="actions">
+    <%= f.submit @record.new_record? ? "Créer" : "Enregistrer", class: "button" %>
+    <%= link_to "Annuler", polymorphic_path([:admin, resource_class]) %>
+  </div>
+<% end %>

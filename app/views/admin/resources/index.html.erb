@@ -1,0 +1,61 @@
+<% content_for :title, resource_title %>
+
+<%= render "admin/resources/tabs" %>
+
+<div class="page-title">
+  <h1><%= resource_title %></h1>
+  <div class="actions">
+    <% if params[:archived] == "1" %>
+      <%= link_to "Masquer les archivés", polymorphic_path([:admin, resource_class]) %>
+    <% else %>
+      <%= link_to "Afficher les archivés", polymorphic_path([:admin, resource_class], archived: "1") %>
+    <% end %>
+    <% if policy(resource_class).create? %>
+      <%= link_to "Nouveau", new_polymorphic_path([:admin, resource_class]), class: "button" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @records.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <% columns.each do |label, _| %><th><%= label %></th><% end %>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @records.each do |record| %>
+          <tr class="<%= "archived" if record.archived? %>">
+            <% columns.each_with_index do |(_, value), index| %>
+              <td>
+                <%= value.call(record) %>
+                <% if index.zero? && record.archived? %><span class="badge badge-archived">Archivé</span><% end %>
+              </td>
+            <% end %>
+            <td class="row-actions">
+              <% if policy(record).update? && !record.archived? %>
+                <%= link_to "Modifier", edit_polymorphic_path([:admin, record]) %>
+              <% end %>
+              <% if policy(record).archive? %>
+                <% if record.archived? %>
+                  <%= button_to "Réactiver", polymorphic_path([:unarchive, :admin, record]), method: :post, class: "link-button dark" %>
+                <% else %>
+                  <%= button_to "Archiver", polymorphic_path([:archive, :admin, record]), method: :post, class: "link-button dark",
+                                form: { data: { turbo_confirm: "Archiver « #{record.name} » ?" } } %>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="empty">Aucun enregistrement.</p>
+<% end %>
+
+<% unless policy(resource_class).create? %>
+  <p class="hint">La création et la modification de cette rubrique sont réservées aux administrateurs.</p>
+<% end %>

@@ -1,0 +1,42 @@
+fr:
+  enums:
+    equipment:
+      status:
+        in_service: "En service"
+        out_of_order: "En panne"
+        under_maintenance: "En maintenance"
+        decommissioned: "Hors service"
+      criticality:
+        low: "Faible"
+        medium: "Moyenne"
+        high: "Haute"
+    user:
+      role:
+        reporter: "Déclarant"
+        technician: "Technicien"
+        technical_manager: "Responsable technique"
+        admin: "Administrateur"
+  activerecord:
+    models:
+      equipment:
+        one: "Équipement"
+        other: "Équipements"
+      location:
+        one: "Local"
+        other: "Locaux"
+      department:
+        one: "Département"
+        other: "Départements"
+    attributes:
+      equipment:
+        code: "Code interne"
+        serial_number: "Numéro de série"
+        equipment_model: "Modèle"
+        location: "Local"
+        status: "Statut"
+        criticality: "Criticité"
+        acquired_on: "Date d'acquisition"
+        commissioned_on: "Date de mise en service"
+        warranty_ends_on: "Fin de garantie"
+        decommissioned_on: "Date de mise hors service"
+        notes: "Notes"

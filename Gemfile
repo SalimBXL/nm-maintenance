@@ -70,3 +70,5 @@ gem "paper_trail", "~> 17.0"
 gem "pundit", "~> 2.5"
 
 gem "roo", "~> 3.0"
+
+gem "rails-i18n", "~> 8.1"

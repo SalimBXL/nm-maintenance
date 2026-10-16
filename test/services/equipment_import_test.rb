@@ -53,14 +53,14 @@ class EquipmentImportTest < ActiveSupport::TestCase
     result = import("SPECT;GE;Modèle A;CAM;CAM1;", "SCAN;GE;Modèle A;CAM;CAM1;")
 
     assert_not result.valid?
-    assert_equal [3], result.errors.map(&:line)
+    assert_equal [ 3 ], result.errors.map(&:line)
     assert_match(/catégorie inconnue/, result.errors.first.message)
   end
 
   test "un département ou un fabricant inconnu est une erreur" do
     result = import("SPECT;GE;Modèle A;LABO;CAM1;", "SPECT;ZZ;Modèle A;CAM;CAM1;")
 
-    assert_equal [2, 3], result.errors.map(&:line)
+    assert_equal [ 2, 3 ], result.errors.map(&:line)
     assert_match(/département inconnu/, result.errors.first.message)
     assert_match(/fabricant inconnu/, result.errors.last.message)
   end
@@ -68,7 +68,7 @@ class EquipmentImportTest < ActiveSupport::TestCase
   test "une valeur obligatoire vide est une erreur" do
     result = import(";GE;Modèle A;CAM;CAM1;")
 
-    assert_equal [2], result.errors.map(&:line)
+    assert_equal [ 2 ], result.errors.map(&:line)
     assert_match(/valeur obligatoire/, result.errors.first.message)
   end
 
@@ -81,7 +81,7 @@ class EquipmentImportTest < ActiveSupport::TestCase
   test "un numéro de série en double dans le fichier est une erreur" do
     result = import("SPECT;GE;Modèle A;CAM;CAM1;SN-1", "SPECT;GE;Modèle A;CAM;CAM1;SN-1")
 
-    assert_equal [3], result.errors.map(&:line)
+    assert_equal [ 3 ], result.errors.map(&:line)
     assert_match(/en double/, result.errors.first.message)
   end
 

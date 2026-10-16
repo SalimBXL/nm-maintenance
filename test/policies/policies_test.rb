@@ -1,7 +1,7 @@
 require "test_helper"
 
 class PoliciesTest < ActiveSupport::TestCase
-  FLEET_POLICIES = [EquipmentPolicy, LocationPolicy, EquipmentCategoryPolicy, EquipmentModelPolicy, ManufacturerPolicy].freeze
+  FLEET_POLICIES = [ EquipmentPolicy, LocationPolicy, EquipmentCategoryPolicy, EquipmentModelPolicy, ManufacturerPolicy ].freeze
   MANAGER_ROLES = %i[admin technical_manager].freeze
   OTHER_ROLES = %i[technician reporter].freeze
 
@@ -44,7 +44,7 @@ class PoliciesTest < ActiveSupport::TestCase
   end
 
   test "personne ne peut supprimer physiquement" do
-    (FLEET_POLICIES + [DepartmentPolicy, UserPolicy]).each do |policy|
+    (FLEET_POLICIES + [ DepartmentPolicy, UserPolicy ]).each do |policy|
       (MANAGER_ROLES + OTHER_ROLES).each do |role|
         assert_not policy.new(user_with(role), nil).destroy?, "#{policy} destroy? pour #{role}"
       end
@@ -100,7 +100,7 @@ class PoliciesTest < ActiveSupport::TestCase
   # --- Utilisateurs non connectés ou non actifs
 
   test "sans utilisateur, tout est refusé" do
-    (FLEET_POLICIES + [DepartmentPolicy, UserPolicy, AuditLogPolicy]).each do |policy|
+    (FLEET_POLICIES + [ DepartmentPolicy, UserPolicy, AuditLogPolicy ]).each do |policy|
       subject = policy.new(nil, nil)
       assert_not subject.index?, "#{policy} index?"
       assert_not subject.show?, "#{policy} show?"
@@ -112,7 +112,7 @@ class PoliciesTest < ActiveSupport::TestCase
   test "un administrateur non actif n'a aucun droit" do
     expired = user_with(:admin, valid_until: Time.zone.today - 1)
 
-    (FLEET_POLICIES + [DepartmentPolicy, UserPolicy, AuditLogPolicy]).each do |policy|
+    (FLEET_POLICIES + [ DepartmentPolicy, UserPolicy, AuditLogPolicy ]).each do |policy|
       subject = policy.new(expired, nil)
       assert_not subject.index?, "#{policy} index?"
       assert_not subject.create?, "#{policy} create?"
@@ -132,6 +132,6 @@ class PoliciesTest < ActiveSupport::TestCase
     technician = User.create!(name: "Tech", email_address: "tech@example.com", password: "secret", role: :technician)
 
     assert_includes UserPolicy::Scope.new(admin, User).resolve, technician
-    assert_equal [technician], UserPolicy::Scope.new(technician, User).resolve.to_a
+    assert_equal [ technician ], UserPolicy::Scope.new(technician, User).resolve.to_a
   end
 end

@@ -56,7 +56,7 @@ class EquipmentImport
     "haute" => "high", "elevee" => "high", "high" => "high"
   }.freeze
 
-  SEPARATORS = [";", ",", "\t"].freeze
+  SEPARATORS = [ ";", ",", "\t" ].freeze
 
   attr_reader :errors, :rows
 
@@ -86,7 +86,7 @@ class EquipmentImport
   def self.template_csv
     CSV.generate(+"\uFEFF", col_sep: ";") do |csv|
       csv << HEADER_NAMES.values
-      csv << ["SPECT", "GE", "Modèle A", "CAM", "Caméra 1", "SN-0001", "moyenne", "2024-03-15", "2024-04-01", "2027-04-01", ""]
+      csv << [ "SPECT", "GE", "Modèle A", "CAM", "Caméra 1", "SN-0001", "moyenne", "2024-03-15", "2024-04-01", "2027-04-01", "" ]
     end
   end
 
@@ -232,7 +232,7 @@ class EquipmentImport
     return if errors.size > before
 
     model = @models.dig(manufacturer.id, normalize(values[:model]))
-    model_key = [manufacturer.id, normalize(values[:model])]
+    model_key = [ manufacturer.id, normalize(values[:model]) ]
     if model && model.category_id != category.id
       add_error(line, "le modèle « #{values[:model]} » existe déjà avec une autre catégorie (#{model.category.name})")
     elsif model.nil?
@@ -243,7 +243,7 @@ class EquipmentImport
     end
 
     location = @locations.dig(department.id, normalize(values[:location]))
-    location_key = [department.id, normalize(values[:location])]
+    location_key = [ department.id, normalize(values[:location]) ]
 
     serial = values[:serial_number].presence
     check_serial(line, serial, model, model_key)
@@ -269,12 +269,12 @@ class EquipmentImport
   def check_serial(line, serial, model, model_key)
     return if serial.blank?
 
-    if model && @existing_serials.include?([model.id, serial])
+    if model && @existing_serials.include?([ model.id, serial ])
       add_error(line, "numéro de série « #{serial} » déjà enregistré pour ce modèle")
       return
     end
 
-    key = [model_key, serial]
+    key = [ model_key, serial ]
     if (first_line = @seen_serials[key])
       add_error(line, "numéro de série « #{serial} » en double dans le fichier (voir ligne #{first_line})")
     else

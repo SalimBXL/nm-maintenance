@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-  has_paper_trail skip: [:password_digest]
+  has_paper_trail skip: [ :password_digest ]
   has_secure_password
 
   has_many :sessions, dependent: :destroy

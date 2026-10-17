@@ -1,0 +1,61 @@
+<% content_for :title, "Modifier #{incident_title(@incident)}" %>
+
+<p class="breadcrumb"><%= link_to "← #{incident_title(@incident)}", incident_path(@incident) %></p>
+<h1>Modifier <%= incident_title(@incident).downcase %></h1>
+
+<%= form_with model: @incident, class: "form" do |f| %>
+  <% if @incident.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% @incident.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :description, "Description" %>
+    <%= f.text_area :description, rows: 4 %>
+  </div>
+
+  <fieldset class="field-group">
+    <legend>Gravité</legend>
+    <%= render "incidents/radio_group", name: "incident[severity]", id_prefix: "incident_severity",
+                                        options: severity_options, selected: @incident.severity %>
+  </fieldset>
+
+  <fieldset class="field-group">
+    <legend>Nature</legend>
+    <%= render "incidents/radio_group", name: "incident[nature]", id_prefix: "incident_nature",
+                                        options: nature_options, selected: @incident.nature %>
+  </fieldset>
+
+  <div class="field">
+    <%= f.label :assigned_to_id, "Personne assignée" %>
+    <%= f.select :assigned_to_id, @assignees.map { |user| [user.name, user.id] }, { include_blank: "Personne" } %>
+  </div>
+
+  <div class="field">
+    <label class="inline">
+      <%= f.check_box :mandatory_declaration %>
+      Déclaration obligatoire
+    </label>
+    <small>À cocher si l'incident impose une déclaration (sécurité, radioprotection : voir la réglementation applicable).</small>
+  </div>
+
+  <div class="field">
+    <%= f.label :root_cause, "Cause racine" %>
+    <%= f.text_area :root_cause, rows: 3 %>
+  </div>
+
+  <div class="field">
+    <%= f.label :corrective_action, "Action corrective" %>
+    <%= f.text_area :corrective_action, rows: 3 %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit "Enregistrer", class: "button" %>
+    <%= link_to "Annuler", incident_path(@incident) %>
+  </div>
+<% end %>

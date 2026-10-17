@@ -1,0 +1,29 @@
+fieldset.field-group { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+fieldset.field-group legend { font-weight: 600; font-size: 0.9rem; padding: 0; margin-bottom: 0.4rem; }
+.group-hint { display: block; margin-top: 0.4rem; color: var(--gris); }
+
+.choices { display: flex; flex-direction: column; gap: 0.4rem; }
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.choice input[type="radio"] { margin-top: 0.3rem; }
+.choice strong { display: block; }
+.choice small { display: block; color: var(--gris); font-size: 0.85rem; }
+.choice:has(input:checked) { border-color: var(--bleu); background: var(--bleu-clair); }
+
+.callout {
+  padding: 0.6rem 0.9rem;
+  margin: 0.75rem 0;
+  border: 1px solid #f0dca8;
+  border-radius: 6px;
+  background: #fff8e6;
+}
+
+details.transition .choice { background: #fff; }

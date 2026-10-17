@@ -1,0 +1,15 @@
+.badge-severity-critical { background: #fbe0de; color: var(--danger); }
+.badge-severity-major { background: #fdf0d2; color: #8a5a00; }
+.badge-severity-minor { background: var(--bleu-clair); color: var(--bleu); }
+
+.badge-incident-declared { background: #e6e8ec; color: var(--gris); }
+.badge-incident-qualified { background: var(--bleu-clair); color: var(--bleu); }
+.badge-incident-in-progress { background: #fdf0d2; color: #8a5a00; }
+.badge-incident-resolved { background: #dff3e6; color: var(--ok); }
+.badge-incident-closed { background: #e6e8ec; color: var(--gris); }
+
+td.wrap { white-space: normal; min-width: 14rem; }
+
+details.transition { border: 1px solid var(--bordure); border-radius: 6px; padding: 0.5rem 0.75rem; margin-bottom: 0.6rem; }
+details.transition summary { cursor: pointer; font-weight: 600; color: var(--bleu); }
+details.transition .form { border: 0; padding: 0.5rem 0 0; margin: 0; max-width: none; }

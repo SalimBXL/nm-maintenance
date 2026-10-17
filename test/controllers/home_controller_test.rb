@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 class HomeControllerTest < ActionDispatch::IntegrationTest
   test "la page d'accueil est accessible une fois connecté" do

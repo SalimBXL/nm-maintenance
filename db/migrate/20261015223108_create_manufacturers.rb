@@ -2,7 +2,7 @@ class CreateManufacturers < ActiveRecord::Migration[8.0]
   def change
     create_table :manufacturers do |t|
       t.string :name, null: false
-      t.string :code, null: false          # ex. GE, VIK, COME, TRAS
+      t.string :code, null: false # ex. GE, VIK, COME, TRAS
       t.datetime :archived_at
       t.timestamps
     end

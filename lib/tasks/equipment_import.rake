@@ -8,10 +8,10 @@ module EquipmentImportTask
   module_function
 
   def load(path)
-    abort("Indiquez le fichier : FILE=chemin/vers/fichier.xlsx") if path.to_s.empty?
+    abort('Indiquez le fichier : FILE=chemin/vers/fichier.xlsx') if path.to_s.empty?
     abort("Fichier introuvable : #{path}") unless File.exist?(path)
 
-    if path.downcase.end_with?(".xlsx")
+    if path.downcase.end_with?('.xlsx')
       EquipmentImport.from_xlsx(path)
     else
       EquipmentImport.from_csv(File.binread(path))
@@ -22,7 +22,7 @@ module EquipmentImportTask
     if import.errors.any?
       puts "#{import.errors.size} erreur(s) :"
       import.errors.each do |error|
-        where = error.line ? "Ligne #{error.line}" : "Fichier"
+        where = error.line ? "Ligne #{error.line}" : 'Fichier'
         puts "  #{where} : #{error.message}"
       end
       puts
@@ -35,9 +35,11 @@ module EquipmentImportTask
       import.new_locations.each { |plan| puts "  - #{plan[:department].name} / #{plan[:name]}" }
     end
 
-    if import.new_models.any?
-      puts "\nModèles qui seront créés (#{import.new_models.size}) :"
-      import.new_models.each { |plan| puts "  - #{plan[:manufacturer].name} / #{plan[:name]} (#{plan[:category].name})" }
+    return unless import.new_models.any?
+
+    puts "\nModèles qui seront créés (#{import.new_models.size}) :"
+    import.new_models.each do |plan|
+      puts "  - #{plan[:manufacturer].name} / #{plan[:name]} (#{plan[:category].name})"
     end
   end
 end
@@ -45,19 +47,19 @@ end
 namespace :equipment do
   desc "Analyse un fichier d'import du parc (CSV ou .xlsx) sans rien créer : FILE=chemin"
   task preview: :environment do
-    import = EquipmentImportTask.load(ENV["FILE"])
+    import = EquipmentImportTask.load(ENV.fetch('FILE', nil))
     EquipmentImportTask.report(import)
     puts(import.valid? ? "\nLe fichier est valide : vous pouvez lancer equipment:import." : "\nLe fichier n'est pas valide : corrigez-le puis relancez l'analyse.")
   end
 
-  desc "Importe le parc depuis un fichier CSV ou .xlsx (tout ou rien) : FILE=chemin"
+  desc 'Importe le parc depuis un fichier CSV ou .xlsx (tout ou rien) : FILE=chemin'
   task import: :environment do
-    import = EquipmentImportTask.load(ENV["FILE"])
+    import = EquipmentImportTask.load(ENV.fetch('FILE', nil))
     EquipmentImportTask.report(import)
     abort("\nFichier invalide : rien n'a été importé.") unless import.valid?
 
     # Auteur indiqué dans le journal d'audit
-    PaperTrail.request.whodunnit = ENV.fetch("WHODUNNIT", "import du parc")
+    PaperTrail.request.whodunnit = ENV.fetch('WHODUNNIT', 'import du parc')
 
     created = import.commit!
     puts "\n#{created.size} équipement(s) créé(s) :"

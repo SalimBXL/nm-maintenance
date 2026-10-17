@@ -68,4 +68,6 @@
   <% end %>
 </section>
 
-<p class="hint">Les incidents, interventions et documents de cet équipement seront ajoutés dans les prochaines étapes.</p>
+<%= render "incidents/equipment_incidents", equipment: @equipment %>
+
+<p class="hint">Les interventions et les documents de cet équipement seront ajoutés dans les prochaines étapes.</p>

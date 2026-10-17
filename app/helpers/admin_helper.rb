@@ -1,15 +1,15 @@
 module AdminHelper
   ADMIN_TABS = [
-    ["Départements", :admin_departments_path, "departments"],
-    ["Locaux", :admin_locations_path, "locations"],
-    ["Catégories", :admin_equipment_categories_path, "equipment_categories"],
-    ["Fabricants", :admin_manufacturers_path, "manufacturers"],
-    ["Modèles", :admin_equipment_models_path, "equipment_models"]
+    ['Départements', :admin_departments_path, 'departments'],
+    ['Locaux', :admin_locations_path, 'locations'],
+    ['Catégories', :admin_equipment_categories_path, 'equipment_categories'],
+    ['Fabricants', :admin_manufacturers_path, 'manufacturers'],
+    ['Modèles', :admin_equipment_models_path, 'equipment_models']
   ].freeze
 
   def admin_tabs
     tabs = ADMIN_TABS.dup
-    tabs << ["Utilisateurs", :admin_users_path, "users"] if policy(User).index?
+    tabs << ['Utilisateurs', :admin_users_path, 'users'] if policy(User).index?
 
     tabs.map do |label, path_helper, controller|
       [label, public_send(path_helper), controller_name == controller]
@@ -31,7 +31,7 @@ module AdminHelper
   # Validité du compte : date de fin facultative ; non actif si elle est passée.
   def validity_label(user)
     if user.valid_until.nil?
-      "Sans limite"
+      'Sans limite'
     elsif user.active?
       "Jusqu'au #{l(user.valid_until)}"
     else

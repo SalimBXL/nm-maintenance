@@ -1,0 +1,80 @@
+<% content_for :title, "Incidents" %>
+
+<div class="page-title">
+  <h1>Incidents</h1>
+  <% if policy(Incident).create? %>
+    <%= link_to "Déclarer un incident", new_incident_path, class: "button" %>
+  <% end %>
+</div>
+
+<%= form_with url: incidents_path, method: :get, class: "filters" do |f| %>
+  <%= f.select :status,
+               options_for_select([["Ouverts", ""], ["Tous", "all"]] +
+                                  Incident.statuses.keys.map { |key| [incident_status_label(key), key] }, params[:status]) %>
+
+  <%= f.select :severity,
+               options_for_select(Incident.severities.keys.map { |key| [severity_label(key), key] }, params[:severity]),
+               { include_blank: "Toutes les gravités" } %>
+
+  <%= f.select :department_id,
+               options_from_collection_for_select(@departments, :id, :name, params[:department_id]),
+               { include_blank: "Tous les départements" } %>
+
+  <label class="inline">
+    <%= f.check_box :mine, { checked: params[:mine] == "1" }, "1", nil %>
+    Mes incidents
+  </label>
+
+  <%= f.hidden_field :equipment_id, value: params[:equipment_id] if params[:equipment_id].present? %>
+  <%= f.submit "Filtrer", name: nil %>
+  <%= link_to "Réinitialiser", incidents_path %>
+<% end %>
+
+<p class="count"><%= @total %> incident<%= "s" if @total > 1 %></p>
+
+<% if @incidents.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Équipement</th>
+          <th>Description</th>
+          <th>Gravité</th>
+          <th>Nature</th>
+          <th>Statut</th>
+          <th>Assigné à</th>
+          <th>Détecté le</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @incidents.each do |incident| %>
+          <tr class="<%= "archived" if incident.closed? %>">
+            <td><%= link_to "##{incident.id}", incident %></td>
+            <td><%= link_to incident.equipment.code, incident.equipment %><br><small><%= location_label(incident.equipment.location) %></small></td>
+            <td class="wrap"><%= truncate(incident.description, length: 70) %></td>
+            <td><%= severity_badge(incident.severity) %></td>
+            <td><%= nature_label(incident.nature) %></td>
+            <td><%= incident_status_badge(incident.status) %></td>
+            <td><%= incident.assigned_to&.name || "—" %></td>
+            <td><%= format_time(incident.detected_at) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @pages > 1 %>
+    <nav class="pagination">
+      <% if @page > 1 %>
+        <%= link_to "← Précédent", incidents_path(request.query_parameters.merge(page: @page - 1)) %>
+      <% end %>
+      <span>Page <%= @page %> sur <%= @pages %></span>
+      <% if @page < @pages %>
+        <%= link_to "Suivant →", incidents_path(request.query_parameters.merge(page: @page + 1)) %>
+      <% end %>
+    </nav>
+  <% end %>
+<% else %>
+  <p class="empty">Aucun incident ne correspond à ces critères.</p>
+<% end %>

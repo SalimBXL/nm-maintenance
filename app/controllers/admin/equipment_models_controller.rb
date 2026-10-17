@@ -8,18 +8,18 @@ module Admin
 
     def fields
       [
-        { name: :manufacturer_id, label: "Fabricant", type: :select, collection: :manufacturers, create_only: true },
-        { name: :category_id, label: "Catégorie", type: :select, collection: :categories, create_only: true },
-        { name: :name, label: "Nom du modèle", type: :text }
+        { name: :manufacturer_id, label: 'Fabricant', type: :select, collection: :manufacturers, create_only: true },
+        { name: :category_id, label: 'Catégorie', type: :select, collection: :categories, create_only: true },
+        { name: :name, label: 'Nom du modèle', type: :text }
       ]
     end
 
     def columns
       [
-        ["Modèle", ->(model) { model.name }],
-        ["Fabricant", ->(model) { model.manufacturer.name }],
-        ["Catégorie", ->(model) { model.category.name }],
-        ["Équipements", ->(model) { model.equipments.kept.count }]
+        ['Modèle', ->(model) { model.name }],
+        ['Fabricant', ->(model) { model.manufacturer.name }],
+        ['Catégorie', ->(model) { model.category.name }],
+        ['Équipements', ->(model) { model.equipments.kept.count }]
       ]
     end
 

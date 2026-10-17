@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_223112) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_17_162952) do
   create_table "department_memberships", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "department_id", null: false
@@ -105,6 +105,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_223112) do
     t.index ["status"], name: "index_equipments_on_status"
   end
 
+  create_table "incident_status_changes", force: :cascade do |t|
+    t.integer "incident_id", null: false
+    t.string "from_status"
+    t.string "to_status", null: false
+    t.integer "user_id"
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["incident_id"], name: "index_incident_status_changes_on_incident_id"
+    t.index ["user_id"], name: "index_incident_status_changes_on_user_id"
+  end
+
+  create_table "incidents", force: :cascade do |t|
+    t.integer "equipment_id", null: false
+    t.integer "reported_by_id", null: false
+    t.integer "assigned_to_id"
+    t.string "severity", default: "minor", null: false
+    t.string "nature", default: "technical", null: false
+    t.string "status", default: "declared", null: false
+    t.text "description", null: false
+    t.datetime "detected_at", null: false
+    t.datetime "resolved_at"
+    t.datetime "closed_at"
+    t.text "root_cause"
+    t.text "corrective_action"
+    t.boolean "mandatory_declaration", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_to_id"], name: "index_incidents_on_assigned_to_id"
+    t.index ["equipment_id"], name: "index_incidents_on_equipment_id"
+    t.index ["reported_by_id"], name: "index_incidents_on_reported_by_id"
+    t.index ["severity"], name: "index_incidents_on_severity"
+    t.index ["status"], name: "index_incidents_on_status"
+  end
+
   create_table "locations", force: :cascade do |t|
     t.integer "department_id", null: false
     t.string "name", null: false
@@ -174,6 +209,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_223112) do
   add_foreign_key "equipment_moves", "users"
   add_foreign_key "equipments", "equipment_models"
   add_foreign_key "equipments", "locations"
+  add_foreign_key "incident_status_changes", "incidents"
+  add_foreign_key "incident_status_changes", "users"
+  add_foreign_key "incidents", "equipments"
+  add_foreign_key "incidents", "users", column: "assigned_to_id"
+  add_foreign_key "incidents", "users", column: "reported_by_id"
   add_foreign_key "locations", "departments"
   add_foreign_key "locations", "users", column: "referent_id"
   add_foreign_key "sessions", "users"

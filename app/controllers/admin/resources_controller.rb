@@ -14,13 +14,18 @@ module Admin
     def index
       authorize resource_class
       scope = policy_scope(resource_class)
-      scope = scope.kept unless params[:archived] == "1"
+      scope = scope.kept unless params[:archived] == '1'
       scope = scope.includes(*includes) if includes.any?
       @records = scope.order(default_order)
     end
 
     def new
       @record = resource_class.new
+      authorize @record
+      load_collections
+    end
+
+    def edit
       authorize @record
       load_collections
     end
@@ -33,13 +38,8 @@ module Admin
         redirect_to index_path, notice: "« #{@record.name} » a été créé."
       else
         load_collections
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
-    end
-
-    def edit
-      authorize @record
-      load_collections
     end
 
     def update
@@ -49,7 +49,7 @@ module Admin
         redirect_to index_path, notice: "« #{@record.name} » a été mis à jour."
       else
         load_collections
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 
@@ -67,7 +67,7 @@ module Admin
     def unarchive
       authorize @record, :archive?
       @record.unarchive!
-      redirect_to index_path(archived: "1"), notice: "« #{@record.name} » a été réactivé."
+      redirect_to index_path(archived: '1'), notice: "« #{@record.name} » a été réactivé."
     end
 
     private
@@ -100,13 +100,13 @@ module Admin
     end
 
     def index_path(options = {})
-      polymorphic_path([ :admin, resource_class ], options)
+      polymorphic_path([:admin, resource_class], options)
     end
 
     # Les champs « create_only » ne se choisissent qu'à la création : ils
     # entrent dans la composition des codes ou lient les enregistrements.
     def record_params
-      names = fields.reject { |field| field[:create_only] && action_name != "create" }.map { |field| field[:name] }
+      names = fields.reject { |field| field[:create_only] && action_name != 'create' }.map { |field| field[:name] }
       params.require(resource_class.model_name.param_key).permit(*names)
     end
   end

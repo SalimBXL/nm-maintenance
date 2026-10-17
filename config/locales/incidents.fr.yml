@@ -1,0 +1,45 @@
+fr:
+  enums:
+    incident:
+      severity:
+        critical: "Critique"
+        major: "Majeure"
+        minor: "Mineure"
+      severity_help:
+        critical: "Équipement indisponible sans solution de repli, ou risque pour un patient ou le personnel. Prise en charge visée : quelques heures."
+        major: "Fonctionnement dégradé ou solution de contournement ; des examens sont perturbés. Prise en charge visée : dans la journée."
+        minor: "Gêne sans impact sur l'activité ni sur la sécurité. Prise en charge visée : quelques jours ouvrés."
+      nature:
+        technical: "Technique"
+        safety: "Sécurité"
+        radiation_protection: "Radioprotection"
+      nature_help:
+        technical: "Panne ou dysfonctionnement de l'appareil, du logiciel ou d'un accessoire, sans risque pour les personnes."
+        safety: "Risque ou événement touchant la sécurité d'un patient ou du personnel (par exemple blessure, chute, dispositif de sécurité défaillant). Peut imposer une déclaration obligatoire."
+        radiation_protection: "Contamination, exposition anormale, anomalie sur une source radioactive ou défaut d'un dispositif de radioprotection. Peut imposer une déclaration obligatoire, selon la réglementation applicable."
+      status:
+        declared: "Déclaré"
+        qualified: "Qualifié"
+        in_progress: "En cours"
+        resolved: "Résolu"
+        closed: "Clôturé"
+  activerecord:
+    models:
+      incident:
+        one: "Incident"
+        other: "Incidents"
+    attributes:
+      incident:
+        equipment: "Équipement"
+        reported_by: "Déclarant"
+        assigned_to: "Personne assignée"
+        severity: "Gravité"
+        nature: "Nature"
+        status: "Statut"
+        description: "Description"
+        detected_at: "Date de détection"
+        resolved_at: "Date de résolution"
+        closed_at: "Date de clôture"
+        root_cause: "Cause racine"
+        corrective_action: "Action corrective"
+        mandatory_declaration: "Déclaration obligatoire"

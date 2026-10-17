@@ -12,14 +12,14 @@ module EquipmentsHelper
   end
 
   def format_date(date)
-    date ? l(date) : "—"
+    date ? l(date) : '—'
   end
 
   def format_time(time)
-    time ? l(time, format: :short) : "—"
+    time ? l(time, format: :short) : '—'
   end
 
   def location_label(location)
-    location ? "#{location.department.name} / #{location.name}" : "—"
+    location ? "#{location.department.name} / #{location.name}" : '—'
   end
 end

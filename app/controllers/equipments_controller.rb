@@ -34,6 +34,11 @@ class EquipmentsController < ApplicationController
     load_form_collections
   end
 
+  def edit
+    authorize @equipment
+    load_form_collections
+  end
+
   def create
     @equipment = Equipment.new(equipment_params)
     authorize @equipment
@@ -42,36 +47,31 @@ class EquipmentsController < ApplicationController
       redirect_to @equipment, notice: "Équipement créé avec le code #{@equipment.code}."
     else
       load_form_collections
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
-  end
-
-  def edit
-    authorize @equipment
-    load_form_collections
   end
 
   def update
     authorize @equipment
 
     if @equipment.update(equipment_params)
-      redirect_to @equipment, notice: "Équipement mis à jour."
+      redirect_to @equipment, notice: 'Équipement mis à jour.'
     else
       load_form_collections
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
   def archive
     authorize @equipment
     @equipment.archive!
-    redirect_to @equipment, notice: "Équipement archivé."
+    redirect_to @equipment, notice: 'Équipement archivé.'
   end
 
   def unarchive
     authorize @equipment, :archive?
     @equipment.unarchive!
-    redirect_to @equipment, notice: "Équipement réactivé."
+    redirect_to @equipment, notice: 'Équipement réactivé.'
   end
 
   private
@@ -83,22 +83,28 @@ class EquipmentsController < ApplicationController
   # Le modèle ne se choisit qu'à la création : le code interne en dépend.
   def equipment_params
     permitted = %i[location_id serial_number criticality acquired_on commissioned_on warranty_ends_on notes]
-    permitted += %i[equipment_model_id] if action_name == "create"
-    permitted += %i[status decommissioned_on] if action_name == "update"
+    permitted += %i[equipment_model_id] if action_name == 'create'
+    permitted += %i[status decommissioned_on] if action_name == 'update'
     params.require(:equipment).permit(*permitted)
   end
 
   def load_form_collections
-    @models = EquipmentModel.kept.includes(:manufacturer, :category).sort_by { |model| [model.manufacturer.name, model.name] }
+    @models = EquipmentModel.kept.includes(:manufacturer, :category).sort_by do |model|
+      [model.manufacturer.name, model.name]
+    end
     @locations = Location.kept.includes(:department).sort_by { |location| [location.department.name, location.name] }
   end
 
   def filtered(scope)
-    scope = scope.kept unless params[:archived] == "1"
+    scope = scope.kept unless params[:archived] == '1'
     scope = scope.where(status: params[:status]) if Equipment.statuses.key?(params[:status])
-    scope = scope.where(location_id: Location.where(department_id: params[:department_id])) if params[:department_id].present?
+    if params[:department_id].present?
+      scope = scope.where(location_id: Location.where(department_id: params[:department_id]))
+    end
     scope = scope.where(location_id: params[:location_id]) if params[:location_id].present?
-    scope = scope.where(equipment_model_id: EquipmentModel.where(category_id: params[:category_id])) if params[:category_id].present?
+    if params[:category_id].present?
+      scope = scope.where(equipment_model_id: EquipmentModel.where(category_id: params[:category_id]))
+    end
     scope = search(scope, params[:q]) if params[:q].present?
     scope
   end
@@ -107,10 +113,10 @@ class EquipmentsController < ApplicationController
   def search(scope, term)
     pattern = "%#{Equipment.sanitize_sql_like(term.to_s.strip)}%"
     by_model = EquipmentModel.joins(:manufacturer)
-                             .where("equipment_models.name LIKE :p OR manufacturers.name LIKE :p", p: pattern)
+                             .where('equipment_models.name LIKE :p OR manufacturers.name LIKE :p', p: pattern)
                              .select(:id)
 
-    scope.where("equipments.code LIKE :p OR equipments.serial_number LIKE :p", p: pattern)
+    scope.where('equipments.code LIKE :p OR equipments.serial_number LIKE :p', p: pattern)
          .or(scope.where(equipment_model_id: by_model))
   end
 end

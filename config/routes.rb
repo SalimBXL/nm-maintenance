@@ -1,12 +1,18 @@
 Rails.application.routes.draw do
-  get "up" => "rails/health#show", as: :rails_health_check
+  get 'up' => 'rails/health#show', as: :rails_health_check
 
-  root "equipments#index"
+  root 'equipments#index'
 
   resources :equipments do
     member do
       post :archive
       post :unarchive
+    end
+  end
+
+  resources :incidents, except: :destroy do
+    member do
+      post :transition
     end
   end
 

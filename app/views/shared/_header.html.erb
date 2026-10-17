@@ -3,6 +3,7 @@
   <% if Current.user %>
     <nav>
       <%= link_to "Parc", equipments_path %>
+      <%= link_to "Incidents", incidents_path %>
       <% if policy(:admin).access? %>
         <%= link_to "Administration", admin_departments_path %>
       <% end %>

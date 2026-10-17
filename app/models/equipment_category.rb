@@ -1,5 +1,6 @@
 class EquipmentCategory < ApplicationRecord
   include Archivable
+
   has_paper_trail
 
   has_many :equipment_models, foreign_key: :category_id, inverse_of: :category
@@ -10,5 +11,5 @@ class EquipmentCategory < ApplicationRecord
   # (PET-CT devient PETCT, SPECT-CT devient SPECTCT).
   validates :name, presence: true, uniqueness: true
   validates :code_prefix, presence: true, uniqueness: true,
-                          format: { with: /\A[A-Z0-9]{2,8}\z/, message: "doit comporter 2 à 8 lettres ou chiffres, sans tiret" }
+                          format: { with: /\A[A-Z0-9]{2,8}\z/, message: 'doit comporter 2 à 8 lettres ou chiffres, sans tiret' }
 end

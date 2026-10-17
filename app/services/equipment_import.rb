@@ -1,4 +1,4 @@
-require "csv"
+require 'csv'
 
 # Import initial du parc par fichier CSV ou Excel (.xlsx).
 #
@@ -29,34 +29,34 @@ class EquipmentImport
   PlannedRow = Struct.new(:line, :model, :model_key, :location, :location_key, :attributes, keyword_init: true)
 
   HEADER_NAMES = {
-    category: "categorie",
-    manufacturer: "fabricant",
-    model: "modele",
-    department: "departement",
-    location: "local",
-    serial_number: "numero_serie",
-    criticality: "criticite",
-    acquired_on: "date_acquisition",
-    commissioned_on: "date_mise_en_service",
-    warranty_ends_on: "fin_garantie",
-    notes: "notes"
+    category: 'categorie',
+    manufacturer: 'fabricant',
+    model: 'modele',
+    department: 'departement',
+    location: 'local',
+    serial_number: 'numero_serie',
+    criticality: 'criticite',
+    acquired_on: 'date_acquisition',
+    commissioned_on: 'date_mise_en_service',
+    warranty_ends_on: 'fin_garantie',
+    notes: 'notes'
   }.freeze
 
   HEADERS = HEADER_NAMES.invert.merge(
-    "numero_de_serie" => :serial_number,
-    "date_de_mise_en_service" => :commissioned_on,
-    "date_de_fin_de_garantie" => :warranty_ends_on
+    'numero_de_serie' => :serial_number,
+    'date_de_mise_en_service' => :commissioned_on,
+    'date_de_fin_de_garantie' => :warranty_ends_on
   ).freeze
 
   REQUIRED = %i[category manufacturer model department location].freeze
 
   CRITICALITIES = {
-    "faible" => "low", "low" => "low",
-    "moyenne" => "medium", "moyen" => "medium", "medium" => "medium",
-    "haute" => "high", "elevee" => "high", "high" => "high"
+    'faible' => 'low', 'low' => 'low',
+    'moyenne' => 'medium', 'moyen' => 'medium', 'medium' => 'medium',
+    'haute' => 'high', 'elevee' => 'high', 'high' => 'high'
   }.freeze
 
-  SEPARATORS = [ ";", ",", "\t" ].freeze
+  SEPARATORS = [';', ',', "\t"].freeze
 
   attr_reader :errors, :rows
 
@@ -74,7 +74,7 @@ class EquipmentImport
 
   # upload : fichier envoyé depuis un formulaire (ActionDispatch::Http::UploadedFile)
   def self.from_upload(upload)
-    if upload.original_filename.to_s.downcase.end_with?(".xlsx")
+    if upload.original_filename.to_s.downcase.end_with?('.xlsx')
       from_xlsx(upload.path)
     else
       from_csv(upload.read)
@@ -84,9 +84,10 @@ class EquipmentImport
   # Modèle de fichier à fournir aux utilisateurs (CSV avec « ; » et BOM UTF-8,
   # pour une ouverture correcte dans Excel).
   def self.template_csv
-    CSV.generate(+"\uFEFF", col_sep: ";") do |csv|
+    CSV.generate(+"\uFEFF", col_sep: ';') do |csv|
       csv << HEADER_NAMES.values
-      csv << [ "SPECT", "GE", "Modèle A", "CAM", "Caméra 1", "SN-0001", "moyenne", "2024-03-15", "2024-04-01", "2027-04-01", "" ]
+      csv << ['SPECT', 'GE', 'Modèle A', 'CAM', 'Caméra 1', 'SN-0001', 'moyenne', '2024-03-15', '2024-04-01',
+              '2027-04-01', '']
     end
   end
 
@@ -96,17 +97,17 @@ class EquipmentImport
       text = content.to_s.dup.force_encoding(Encoding::Windows_1252)
                     .encode(Encoding::UTF_8, invalid: :replace, undef: :replace)
     end
-    text = text.sub(/\A\uFEFF/, "")
+    text = text.sub(/\A\uFEFF/, '')
 
     first_line = text.lines.first.to_s
     separator = SEPARATORS.max_by { |candidate| first_line.count(candidate) }
-    separator = ";" if first_line.count(separator).zero?
+    separator = ';' if first_line.count(separator).zero?
 
     CSV.parse(text, col_sep: separator, liberal_parsing: true)
   end
 
   def self.read_xlsx(path)
-    require "roo"
+    require 'roo'
     book = Roo::Spreadsheet.open(path, extension: :xlsx)
     book.default_sheet = book.sheets.first
     return [] unless book.first_row
@@ -177,7 +178,7 @@ class EquipmentImport
   def analyze
     header, *data = @table
     if header.blank? || header.all? { |cell| cell.to_s.strip.empty? }
-      add_error(nil, "Le fichier est vide.")
+      add_error(nil, 'Le fichier est vide.')
       return
     end
 
@@ -207,7 +208,9 @@ class EquipmentImport
     @manufacturers = keyed(Manufacturer.kept, :name, :code)
     @departments = keyed(Department.kept, :name, :code)
     @locations = Location.kept.group_by(&:department_id).transform_values { |list| keyed(list, :name, :code) }
-    @models = EquipmentModel.kept.includes(:category).group_by(&:manufacturer_id).transform_values { |list| keyed(list, :name) }
+    @models = EquipmentModel.kept.includes(:category).group_by(&:manufacturer_id).transform_values do |list|
+      keyed(list, :name)
+    end
     @existing_serials = Equipment.where.not(serial_number: nil).pluck(:equipment_model_id, :serial_number).to_set
   end
 
@@ -226,13 +229,16 @@ class EquipmentImport
     category = @categories[normalize(values[:category])]
     add_error(line, "catégorie inconnue « #{values[:category]} » (à créer dans l'administration)") unless category
     manufacturer = @manufacturers[normalize(values[:manufacturer])]
-    add_error(line, "fabricant inconnu « #{values[:manufacturer]} » (à créer dans l'administration)") unless manufacturer
+    unless manufacturer
+      add_error(line,
+                "fabricant inconnu « #{values[:manufacturer]} » (à créer dans l'administration)")
+    end
     department = @departments[normalize(values[:department])]
     add_error(line, "département inconnu « #{values[:department]} » (à créer dans l'administration)") unless department
     return if errors.size > before
 
     model = @models.dig(manufacturer.id, normalize(values[:model]))
-    model_key = [ manufacturer.id, normalize(values[:model]) ]
+    model_key = [manufacturer.id, normalize(values[:model])]
     if model && model.category_id != category.id
       add_error(line, "le modèle « #{values[:model]} » existe déjà avec une autre catégorie (#{model.category.name})")
     elsif model.nil?
@@ -243,18 +249,21 @@ class EquipmentImport
     end
 
     location = @locations.dig(department.id, normalize(values[:location]))
-    location_key = [ department.id, normalize(values[:location]) ]
+    location_key = [department.id, normalize(values[:location])]
 
     serial = values[:serial_number].presence
     check_serial(line, serial, model, model_key)
     criticality = parse_criticality(values[:criticality], line)
-    acquired_on = parse_date(values[:acquired_on], line, "date_acquisition")
-    commissioned_on = parse_date(values[:commissioned_on], line, "date_mise_en_service")
-    warranty_ends_on = parse_date(values[:warranty_ends_on], line, "fin_garantie")
+    acquired_on = parse_date(values[:acquired_on], line, 'date_acquisition')
+    commissioned_on = parse_date(values[:commissioned_on], line, 'date_mise_en_service')
+    warranty_ends_on = parse_date(values[:warranty_ends_on], line, 'fin_garantie')
     return if errors.size > before
 
     @planned_models[model_key] ||= { manufacturer: manufacturer, category: category, name: values[:model] } unless model
-    @planned_locations[location_key] ||= { department: department, name: values[:location], code: values[:location] } unless location
+    unless location
+      @planned_locations[location_key] ||= { department: department, name: values[:location],
+                                             code: values[:location] }
+    end
 
     rows << PlannedRow.new(
       line: line, model: model, model_key: model_key, location: location, location_key: location_key,
@@ -269,12 +278,12 @@ class EquipmentImport
   def check_serial(line, serial, model, model_key)
     return if serial.blank?
 
-    if model && @existing_serials.include?([ model.id, serial ])
+    if model && @existing_serials.include?([model.id, serial])
       add_error(line, "numéro de série « #{serial} » déjà enregistré pour ce modèle")
       return
     end
 
-    key = [ model_key, serial ]
+    key = [model_key, serial]
     if (first_line = @seen_serials[key])
       add_error(line, "numéro de série « #{serial} » en double dans le fichier (voir ligne #{first_line})")
     else
@@ -283,7 +292,7 @@ class EquipmentImport
   end
 
   def parse_criticality(value, line)
-    return "medium" if value.blank?
+    return 'medium' if value.blank?
 
     CRITICALITIES[normalize(value)] || begin
       add_error(line, "criticité inconnue « #{value} » (faible, moyenne ou haute)")
@@ -321,11 +330,11 @@ class EquipmentImport
   end
 
   def normalize(value)
-    I18n.transliterate(value.to_s).downcase.strip.squeeze(" ")
+    I18n.transliterate(value.to_s).downcase.strip.squeeze(' ')
   end
 
   def normalize_header(value)
-    normalize(value).gsub(/[\s\-]+/, "_")
+    normalize(value).gsub(/[\s-]+/, '_')
   end
 
   def keyed(records, *attributes)

@@ -6,9 +6,9 @@ class CreateEquipments < ActiveRecord::Migration[8.0]
       t.references :equipment_model, null: false, foreign_key: true
       t.references :location, null: false, foreign_key: true
       # Valeurs de status : in_service, out_of_order, under_maintenance, decommissioned
-      t.string :status, null: false, default: "in_service"
+      t.string :status, null: false, default: 'in_service'
       # Valeurs de criticality : low, medium, high (à confirmer)
-      t.string :criticality, null: false, default: "medium"
+      t.string :criticality, null: false, default: 'medium'
       t.date :acquired_on
       t.date :commissioned_on
       t.date :warranty_ends_on

@@ -1,0 +1,53 @@
+<details class="transition">
+  <summary><%= transition_label(incident, target) %></summary>
+
+  <%= form_with url: transition_incident_path(incident), method: :post, class: "form" do %>
+    <%= hidden_field_tag :to, target %>
+
+    <% if target == "qualified" %>
+      <fieldset class="field-group">
+        <legend>Gravité (à confirmer)</legend>
+        <%= render "incidents/radio_group", name: "incident[severity]", id_prefix: "incident_severity",
+                                            options: severity_options, selected: incident.severity %>
+      </fieldset>
+      <fieldset class="field-group">
+        <legend>Nature</legend>
+        <%= render "incidents/radio_group", name: "incident[nature]", id_prefix: "incident_nature",
+                                            options: nature_options, selected: incident.nature %>
+      </fieldset>
+      <div class="field">
+        <%= label_tag "incident_assigned_to_id", "Personne assignée" %>
+        <%= select_tag "incident[assigned_to_id]", options_for_select(@assignees.map { |user| [user.name, user.id] }, incident.assigned_to_id), include_blank: "Choisir…" %>
+      </div>
+      <div class="field">
+        <label class="inline">
+          <%= hidden_field_tag "incident[mandatory_declaration]", "0" %>
+          <%= check_box_tag "incident[mandatory_declaration]", "1", incident.mandatory_declaration? %>
+          Déclaration obligatoire
+        </label>
+      </div>
+    <% end %>
+
+    <% if target == "resolved" || target == "closed" %>
+      <% if target == "closed" %>
+        <div class="field">
+          <%= label_tag "incident_root_cause", "Cause racine (obligatoire)" %>
+          <%= text_area_tag "incident[root_cause]", incident.root_cause, rows: 3 %>
+        </div>
+      <% end %>
+      <div class="field">
+        <%= label_tag "incident_corrective_action", "Action corrective" %>
+        <%= text_area_tag "incident[corrective_action]", incident.corrective_action, rows: 3 %>
+      </div>
+    <% end %>
+
+    <div class="field">
+      <%= label_tag :comment, (incident.resolved? && target == "in_progress") ? "Commentaire (obligatoire pour rouvrir)" : "Commentaire" %>
+      <%= text_area_tag :comment, nil, rows: 2 %>
+    </div>
+
+    <div class="actions">
+      <%= submit_tag transition_label(incident, target), class: "button" %>
+    </div>
+  <% end %>
+</details>

@@ -3,10 +3,11 @@
 # et pour rattacher un manuel à tous les appareils d'un même modèle.
 class EquipmentModel < ApplicationRecord
   include Archivable
+
   has_paper_trail
 
   belongs_to :manufacturer
-  belongs_to :category, class_name: "EquipmentCategory"
+  belongs_to :category, class_name: 'EquipmentCategory'
 
   has_many :equipments
 

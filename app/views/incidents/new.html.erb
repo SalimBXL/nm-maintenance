@@ -1,0 +1,69 @@
+<% content_for :title, "Déclarer un incident" %>
+
+<p class="breadcrumb"><%= link_to "← Incidents", incidents_path %></p>
+<h1>Déclarer un incident</h1>
+
+<% if @equipments.empty? %>
+  <p class="flash flash-alert">
+    Aucun équipement n'est disponible pour votre compte. Si vous pensez qu'il s'agit d'une erreur,
+    demandez à un administrateur de vous rattacher à votre département.
+  </p>
+<% else %>
+  <p class="callout">
+    En cas de danger immédiat pour une personne, prévenez aussi directement le responsable :
+    cette déclaration n'envoie pas encore d'alerte.
+  </p>
+
+  <%= form_with model: @incident, class: "form" do |f| %>
+    <% if @incident.errors.any? %>
+      <div class="flash flash-alert">
+        <ul>
+          <% @incident.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="field">
+      <%= f.label :equipment_id, "Équipement" %>
+      <%= f.select :equipment_id,
+                   @equipments.map { |equipment| ["#{equipment.code} – #{equipment.equipment_model.name} (#{location_label(equipment.location)})", equipment.id] },
+                   { include_blank: "Choisir l'équipement…" } %>
+    </div>
+
+    <div class="field">
+      <%= f.label :description, "Que se passe-t-il ?" %>
+      <%= f.text_area :description, rows: 4 %>
+    </div>
+
+    <fieldset class="field-group">
+      <legend>Gravité (proposition)</legend>
+      <%= render "incidents/radio_group", name: "incident[severity]", id_prefix: "incident_severity",
+                                          options: severity_options, selected: @incident.severity %>
+      <small class="group-hint">
+        En cas de doute, choisissez le niveau le plus élevé : le responsable technique confirmera la gravité.
+      </small>
+    </fieldset>
+
+    <fieldset class="field-group">
+      <legend>Nature</legend>
+      <%= render "incidents/radio_group", name: "incident[nature]", id_prefix: "incident_nature",
+                                          options: nature_options, selected: @incident.nature %>
+      <small class="group-hint">
+        Les incidents de sécurité et de radioprotection peuvent imposer une déclaration obligatoire :
+        le responsable technique vérifiera.
+      </small>
+    </fieldset>
+
+    <div class="field">
+      <%= f.label :detected_at, "Détecté le" %>
+      <%= f.datetime_field :detected_at %>
+    </div>
+
+    <div class="actions">
+      <%= f.submit "Déclarer l'incident", class: "button" %>
+      <%= link_to "Annuler", incidents_path %>
+    </div>
+  <% end %>
+<% end %>

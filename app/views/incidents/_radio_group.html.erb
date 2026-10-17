@@ -1,0 +1,13 @@
+<%# Choix à boutons radio, chacun avec son explication.
+    Locals : name (ex. "incident[severity]"), id_prefix, options ([valeur, libellé, explication]), selected %>
+<div class="choices">
+  <% options.each do |value, label, description| %>
+    <label class="choice">
+      <%= radio_button_tag name, value, selected.to_s == value.to_s, id: "#{id_prefix}_#{value}" %>
+      <span>
+        <strong><%= label %></strong>
+        <small><%= description %></small>
+      </span>
+    </label>
+  <% end %>
+</div>

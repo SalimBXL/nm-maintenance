@@ -1,0 +1,36 @@
+<% incidents = Incident.where(equipment_id: equipment.id).order(detected_at: :desc).limit(10) %>
+
+<section class="card">
+  <div class="page-title">
+    <h2>Incidents</h2>
+    <div class="actions">
+      <%= link_to "Voir tous", incidents_path(equipment_id: equipment.id, status: "all") %>
+      <% if policy(Incident.new(equipment: equipment)).create? && !equipment.archived? %>
+        <%= link_to "Déclarer un incident", new_incident_path(equipment_id: equipment.id), class: "button secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if incidents.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>N°</th><th>Description</th><th>Gravité</th><th>Statut</th><th>Détecté le</th></tr>
+        </thead>
+        <tbody>
+          <% incidents.each do |incident| %>
+            <tr>
+              <td><%= link_to "##{incident.id}", incident %></td>
+              <td class="wrap"><%= truncate(incident.description, length: 70) %></td>
+              <td><%= severity_badge(incident.severity) %></td>
+              <td><%= incident_status_badge(incident.status) %></td>
+              <td><%= format_time(incident.detected_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucun incident enregistré pour cet équipement.</p>
+  <% end %>
+</section>

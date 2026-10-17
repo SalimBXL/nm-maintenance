@@ -17,6 +17,11 @@ module Admin
       load_form_data
     end
 
+    def edit
+      authorize @user
+      load_form_data
+    end
+
     def create
       @user = User.new(user_params)
       authorize @user
@@ -25,13 +30,8 @@ module Admin
         redirect_to admin_users_path, notice: "Le compte de « #{@user.name} » a été créé."
       else
         load_form_data
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
-    end
-
-    def edit
-      authorize @user
-      load_form_data
     end
 
     def update
@@ -39,14 +39,14 @@ module Admin
       @user.assign_attributes(user_params)
 
       if removes_last_active_admin?(@user)
-        @user.errors.add(:base, "Il doit rester au moins un administrateur actif.")
+        @user.errors.add(:base, 'Il doit rester au moins un administrateur actif.')
         load_form_data
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       elsif save_with_departments(@user)
         redirect_to admin_users_path, notice: "Le compte de « #{@user.name} » a été mis à jour."
       else
         load_form_data
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 
@@ -56,7 +56,7 @@ module Admin
       @user.valid_until = Time.zone.yesterday
 
       if removes_last_active_admin?(@user)
-        redirect_to admin_users_path, alert: "Il doit rester au moins un administrateur actif."
+        redirect_to admin_users_path, alert: 'Il doit rester au moins un administrateur actif.'
       else
         @user.save!
         @user.sessions.destroy_all
@@ -79,7 +79,8 @@ module Admin
 
     # Un mot de passe vide à la modification signifie « ne pas changer ».
     def user_params
-      permitted = params.require(:user).permit(:name, :email_address, :role, :valid_until, :password, :password_confirmation)
+      permitted = params.require(:user).permit(:name, :email_address, :role, :valid_until, :password,
+                                               :password_confirmation)
       permitted.delete(:password) if permitted[:password].blank?
       permitted.delete(:password_confirmation) if permitted[:password].blank?
       permitted
@@ -126,7 +127,7 @@ module Admin
       return false if user.new_record?
 
       was_active = user.valid_until_was.nil? || user.valid_until_was >= Time.zone.today
-      was_active_admin = user.role_was == "admin" && was_active
+      was_active_admin = user.role_was == 'admin' && was_active
       still_active_admin = user.admin? && user.active?
       return false unless was_active_admin && !still_active_admin
 

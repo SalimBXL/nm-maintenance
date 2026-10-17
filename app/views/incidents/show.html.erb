@@ -1,0 +1,87 @@
+<% content_for :title, incident_title(@incident) %>
+
+<p class="breadcrumb"><%= link_to "← Incidents", incidents_path %></p>
+
+<div class="page-title">
+  <h1>
+    <%= incident_title(@incident) %>
+    <%= incident_status_badge(@incident.status) %>
+    <%= severity_badge(@incident.severity) %>
+  </h1>
+
+  <div class="actions">
+    <% if policy(@incident).update? %>
+      <%= link_to "Modifier / qualifier", edit_incident_path(@incident), class: "button secondary" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @incident.errors.any? %>
+  <div class="flash flash-alert">
+    <ul>
+      <% @incident.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<% if @incident.may_require_mandatory_declaration? && !@incident.closed? %>
+  <div class="flash flash-alert">
+    Un incident de <%= nature_label(@incident.nature).downcase %> peut imposer une déclaration obligatoire :
+    vérifiez la réglementation applicable<%= " (déclaration marquée comme obligatoire)" if @incident.mandatory_declaration? %>.
+  </div>
+<% end %>
+
+<section class="card">
+  <h2>Informations</h2>
+  <dl class="details">
+    <dt>Équipement</dt>
+    <dd>
+      <%= link_to @incident.equipment.code, @incident.equipment %>
+      – <%= location_label(@incident.equipment.location) %>
+    </dd>
+    <dt>Description</dt><dd><%= simple_format(h(@incident.description)) %></dd>
+    <dt>Gravité</dt><dd><%= severity_label(@incident.severity) %></dd>
+    <dt>Nature</dt><dd><%= nature_label(@incident.nature) %></dd>
+    <dt>Déclaré par</dt><dd><%= @incident.reported_by.name %></dd>
+    <dt>Assigné à</dt><dd><%= @incident.assigned_to&.name || "—" %></dd>
+    <dt>Détecté le</dt><dd><%= format_time(@incident.detected_at) %></dd>
+    <dt>Résolu le</dt><dd><%= format_time(@incident.resolved_at) %></dd>
+    <dt>Clôturé le</dt><dd><%= format_time(@incident.closed_at) %></dd>
+    <dt>Déclaration obligatoire</dt><dd><%= @incident.mandatory_declaration? ? "Oui" : "Non" %></dd>
+    <dt>Cause racine</dt><dd><%= @incident.root_cause.presence || "—" %></dd>
+    <dt>Action corrective</dt><dd><%= @incident.corrective_action.presence || "—" %></dd>
+  </dl>
+</section>
+
+<% if @allowed_targets.any? %>
+  <section class="card">
+    <h2>Actions</h2>
+    <% @allowed_targets.each do |target| %>
+      <%= render "transition_form", incident: @incident, target: target %>
+    <% end %>
+  </section>
+<% end %>
+
+<section class="card">
+  <h2>Historique des statuts</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>De</th><th>Vers</th><th>Par</th><th>Commentaire</th></tr>
+      </thead>
+      <tbody>
+        <% @changes.each do |change| %>
+          <tr>
+            <td><%= format_time(change.created_at) %></td>
+            <td><%= change.from_status ? incident_status_label(change.from_status) : "—" %></td>
+            <td><%= incident_status_label(change.to_status) %></td>
+            <td><%= change.user&.name || "—" %></td>
+            <td class="wrap"><%= change.comment.presence || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

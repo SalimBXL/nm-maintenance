@@ -1,5 +1,6 @@
 class Equipment < ApplicationRecord
   include Archivable
+
   has_paper_trail
 
   # TYPE-FABRICANT-NN, ex. PETCT-GE-01, SPECT-SIEM-02, ACT-VIK-01
@@ -17,17 +18,17 @@ class Equipment < ApplicationRecord
   delegate :category, :manufacturer, to: :equipment_model
 
   enum :status, {
-    in_service: "in_service",             # en service
-    out_of_order: "out_of_order",         # en panne
-    under_maintenance: "under_maintenance", # en maintenance
-    decommissioned: "decommissioned"      # hors service
+    in_service: 'in_service',             # en service
+    out_of_order: 'out_of_order',         # en panne
+    under_maintenance: 'under_maintenance', # en maintenance
+    decommissioned: 'decommissioned' # hors service
   }, default: :in_service, validate: true
 
   # Niveaux de criticité : à confirmer.
   enum :criticality, {
-    low: "low",
-    medium: "medium",
-    high: "high"
+    low: 'low',
+    medium: 'medium',
+    high: 'high'
   }, default: :medium, prefix: true, validate: true
 
   normalizes :serial_number, with: ->(v) { v.strip.presence }

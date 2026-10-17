@@ -3,7 +3,7 @@ class CreateEquipmentCategories < ActiveRecord::Migration[8.0]
     create_table :equipment_categories do |t|
       t.string :name, null: false
       t.text :description
-      t.string :code_prefix, null: false   # ex. PETCT, SPECT, ACT (8 caractères max, sans tiret)
+      t.string :code_prefix, null: false # ex. PETCT, SPECT, ACT (8 caractères max, sans tiret)
       t.datetime :archived_at
       t.timestamps
     end

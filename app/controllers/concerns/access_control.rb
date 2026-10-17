@@ -18,7 +18,7 @@ module AccessControl
   def forbidden
     respond_to do |format|
       format.html { redirect_back_or_to root_path, alert: "Vous n'avez pas le droit d'effectuer cette action." }
-      format.json { render json: { error: "forbidden" }, status: :forbidden }
+      format.json { render json: { error: 'forbidden' }, status: :forbidden }
       format.any { head :forbidden }
     end
   end

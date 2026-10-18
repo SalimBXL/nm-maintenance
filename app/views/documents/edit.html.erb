@@ -1,0 +1,44 @@
+<% content_for :title, "Modifier #{@document.title}" %>
+
+<p class="breadcrumb"><%= link_to "← #{@document.title}", document_path(@document) %></p>
+<h1>Modifier <%= @document.title %></h1>
+
+<%= form_with model: @document, class: "form" do |f| %>
+  <%= render "errors", record: @document %>
+
+  <p class="hint">
+    Rattaché à : <%= document_target(@document) %> · <%= version_text(@document) %>.
+    Pour changer le fichier, ajoutez une nouvelle version.
+  </p>
+
+  <fieldset class="field-group">
+    <legend>Type de document</legend>
+    <%= render "incidents/radio_group", name: "document[document_type]", id_prefix: "document_document_type",
+                                        options: document_type_options, selected: @document.document_type %>
+  </fieldset>
+
+  <div class="field">
+    <%= f.label :title, "Titre" %>
+    <%= f.text_field :title %>
+  </div>
+
+  <div class="field">
+    <%= f.label :version_label, "Version du document" %>
+    <%= f.text_field :version_label %>
+  </div>
+
+  <div class="field">
+    <%= f.label :valid_until, "Valide jusqu'au" %>
+    <%= f.date_field :valid_until %>
+  </div>
+
+  <div class="field">
+    <%= f.label :notes, "Notes" %>
+    <%= f.text_area :notes, rows: 3 %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit "Enregistrer", class: "button" %>
+    <%= link_to "Annuler", document_path(@document) %>
+  </div>
+<% end %>

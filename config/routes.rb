@@ -22,6 +22,16 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :documents, except: :destroy do
+    member do
+      get :download
+      get :new_version
+      post :create_version
+      post :archive
+      post :unarchive
+    end
+  end
+
   resource :session
   resources :passwords, param: :token
 

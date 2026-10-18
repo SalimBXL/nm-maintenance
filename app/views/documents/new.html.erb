@@ -1,0 +1,83 @@
+<% content_for :title, "Ajouter un document" %>
+
+<p class="breadcrumb"><%= link_to "← Documents techniques", documents_path %></p>
+<h1>Ajouter un document</h1>
+
+<%= form_with model: @document, class: "form", multipart: true, data: { controller: "target-switch" } do |f| %>
+  <%= render "errors", record: @document %>
+
+  <fieldset class="field-group">
+    <legend>Ce document concerne</legend>
+    <div class="choices">
+      <label class="choice">
+        <%= radio_button_tag "document[target_kind]", "equipment", @target_kind == "equipment", id: "document_target_kind_equipment",
+                            data: { action: "change->target-switch#update" } %>
+        <span>
+          <strong>Un équipement précis</strong>
+          <small>Un certificat, un rapport ou une procédure propre à un appareil.</small>
+        </span>
+      </label>
+      <label class="choice">
+        <%= radio_button_tag "document[target_kind]", "model", @target_kind == "model", id: "document_target_kind_model",
+                            data: { action: "change->target-switch#update" } %>
+        <span>
+          <strong>Tous les appareils d'un modèle</strong>
+          <small>Un manuel ou une déclaration de conformité valable pour tous les exemplaires du modèle.</small>
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="field" data-target-switch-target="equipment">
+    <%= f.label :equipment_id, "Équipement concerné" %>
+    <%= f.select :equipment_id,
+                 @equipments.map { |equipment| ["#{equipment.code} – #{equipment.equipment_model.name} (#{location_label(equipment.location)})", equipment.id] },
+                 { include_blank: "—" } %>
+  </div>
+
+  <div class="field" data-target-switch-target="model">
+    <%= f.label :equipment_model_id, "Modèle concerné" %>
+    <%= f.select :equipment_model_id,
+                 @models.map { |model| ["#{model.manufacturer.name} – #{model.name} (#{model.category.name})", model.id] },
+                 { include_blank: "—" } %>
+  </div>
+
+  <fieldset class="field-group">
+    <legend>Type de document</legend>
+    <%= render "incidents/radio_group", name: "document[document_type]", id_prefix: "document_document_type",
+                                        options: document_type_options, selected: @document.document_type %>
+  </fieldset>
+
+  <div class="field">
+    <%= f.label :title, "Titre" %>
+    <%= f.text_field :title, placeholder: "Ex. Manuel d'utilisation" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :version_label, "Version du document (facultatif)" %>
+    <%= f.text_field :version_label, placeholder: "Ex. 2.1 ou rév. B" %>
+    <small>La numérotation des versions dans l'application (v1, v2…) est automatique.</small>
+  </div>
+
+  <div class="field">
+    <%= f.label :valid_until, "Valide jusqu'au (facultatif)" %>
+    <%= f.date_field :valid_until %>
+    <small>Pour un certificat ou une déclaration qui expire.</small>
+  </div>
+
+  <div class="field">
+    <%= f.label :file, "Fichier" %>
+    <%= f.file_field :file %>
+    <small>PDF, image (PNG, JPEG), Word, Excel, texte ou archive ZIP ; 25 Mo au maximum.</small>
+  </div>
+
+  <div class="field">
+    <%= f.label :notes, "Notes (facultatif)" %>
+    <%= f.text_area :notes, rows: 3 %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit "Ajouter le document", class: "button" %>
+    <%= link_to "Annuler", documents_path %>
+  </div>
+<% end %>

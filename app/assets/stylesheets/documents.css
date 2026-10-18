@@ -1,0 +1,5 @@
+.badge-validity-expired { background: #fbe0de; color: var(--danger); }
+.badge-validity-soon { background: #fdf0d2; color: #8a5a00; }
+
+/* Un élément masqué par l'attribut hidden doit le rester, même avec display:flex (.field). */
+[hidden] { display: none !important; }

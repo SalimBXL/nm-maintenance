@@ -10,7 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_18_005629) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_112827) do
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "department_memberships", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "department_id", null: false
@@ -33,6 +61,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_005629) do
     t.index ["manager_id"], name: "index_departments_on_manager_id"
     t.index ["name"], name: "index_departments_on_name", unique: true
     t.index ["parent_id"], name: "index_departments_on_parent_id"
+  end
+
+  create_table "documents", force: :cascade do |t|
+    t.integer "equipment_id"
+    t.integer "equipment_model_id"
+    t.integer "uploaded_by_id"
+    t.integer "supersedes_id"
+    t.string "document_type", default: "other", null: false
+    t.string "title", null: false
+    t.integer "version_number", default: 1, null: false
+    t.string "version_label"
+    t.date "valid_until"
+    t.text "notes"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["equipment_id"], name: "index_documents_on_equipment_id"
+    t.index ["equipment_model_id"], name: "index_documents_on_equipment_model_id"
+    t.index ["supersedes_id"], name: "index_documents_on_supersedes_id", unique: true
+    t.index ["uploaded_by_id"], name: "index_documents_on_uploaded_by_id"
   end
 
   create_table "equipment_categories", force: :cascade do |t|
@@ -218,10 +266,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_005629) do
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "department_memberships", "departments"
   add_foreign_key "department_memberships", "users"
   add_foreign_key "departments", "departments", column: "parent_id"
   add_foreign_key "departments", "users", column: "manager_id"
+  add_foreign_key "documents", "documents", column: "supersedes_id"
+  add_foreign_key "documents", "equipment_models"
+  add_foreign_key "documents", "equipments"
+  add_foreign_key "documents", "users", column: "uploaded_by_id"
   add_foreign_key "equipment_code_counters", "equipment_categories", column: "category_id"
   add_foreign_key "equipment_code_counters", "manufacturers"
   add_foreign_key "equipment_models", "equipment_categories", column: "category_id"

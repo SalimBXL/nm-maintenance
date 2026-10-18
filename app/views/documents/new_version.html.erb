@@ -1,0 +1,45 @@
+<% content_for :title, "Nouvelle version – #{@document.title}" %>
+
+<p class="breadcrumb"><%= link_to "← #{@document.title}", document_path(@document) %></p>
+<h1>Nouvelle version de « <%= @document.title %> »</h1>
+
+<p class="hint">
+  Version actuelle : <%= version_text(@document) %>. La nouvelle version sera la <strong>v<%= @document.version_number + 1 %></strong> ;
+  l'ancienne reste consultable dans l'historique.
+</p>
+
+<%= form_with model: @new_document, url: create_version_document_path(@document), method: :post, scope: :document,
+              class: "form", multipart: true do |f| %>
+  <%= render "errors", record: @new_document %>
+
+  <div class="field">
+    <%= f.label :file, "Fichier de la nouvelle version" %>
+    <%= f.file_field :file %>
+    <small>PDF, image (PNG, JPEG), Word, Excel, texte ou archive ZIP ; 25 Mo au maximum.</small>
+  </div>
+
+  <div class="field">
+    <%= f.label :title, "Titre" %>
+    <%= f.text_field :title %>
+  </div>
+
+  <div class="field">
+    <%= f.label :version_label, "Version du document (facultatif)" %>
+    <%= f.text_field :version_label, placeholder: "Ex. 2.2 ou rév. C" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :valid_until, "Valide jusqu'au (facultatif)" %>
+    <%= f.date_field :valid_until %>
+  </div>
+
+  <div class="field">
+    <%= f.label :notes, "Ce qui change dans cette version (facultatif)" %>
+    <%= f.text_area :notes, rows: 3 %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit "Ajouter la nouvelle version", class: "button" %>
+    <%= link_to "Annuler", document_path(@document) %>
+  </div>
+<% end %>

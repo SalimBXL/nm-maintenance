@@ -1,0 +1,82 @@
+<% content_for :title, @document.title %>
+
+<p class="breadcrumb"><%= link_to "← Documents techniques", documents_path %></p>
+
+<div class="page-title">
+  <h1>
+    <%= @document.title %>
+    <span class="badge"><%= version_text(@document) %></span>
+    <% if @document.archived? %><span class="badge badge-archived">Archivé</span><% end %>
+    <% unless @document.current? %><span class="badge badge-archived">Remplacé</span><% end %>
+  </h1>
+
+  <div class="actions">
+    <%= link_to "Télécharger", download_document_path(@document), class: "button" %>
+    <% if policy(@document).new_version? %>
+      <%= link_to "Nouvelle version", new_version_document_path(@document), class: "button secondary" %>
+    <% end %>
+    <% if policy(@document).update? %>
+      <%= link_to "Modifier", edit_document_path(@document), class: "button secondary" %>
+      <% if @document.archived? %>
+        <%= button_to "Réactiver", unarchive_document_path(@document), method: :post, class: "button secondary" %>
+      <% else %>
+        <%= button_to "Archiver", archive_document_path(@document), method: :post, class: "button secondary",
+                      form: { data: { turbo_confirm: "Archiver ce document ?" } } %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<% unless @document.current? %>
+  <div class="flash flash-alert">
+    Une version plus récente existe :
+    <%= link_to "voir la version #{@document.superseded_by.version_number}", @document.superseded_by %>.
+  </div>
+<% end %>
+
+<% if @document.expired? %>
+  <div class="flash flash-alert">Ce document est expiré depuis le <%= l(@document.valid_until) %>.</div>
+<% elsif @document.expiring_soon? %>
+  <div class="flash flash-alert">Ce document expire le <%= l(@document.valid_until) %>.</div>
+<% end %>
+
+<section class="card">
+  <h2>Informations</h2>
+  <dl class="details">
+    <dt>Type</dt><dd><%= document_type_label(@document.document_type) %></dd>
+    <dt>Rattaché à</dt><dd><%= document_target(@document) %></dd>
+    <dt>Version</dt><dd><%= version_text(@document) %></dd>
+    <dt>Valide jusqu'au</dt><dd><%= validity_badge(@document) %></dd>
+    <dt>Fichier</dt>
+    <dd><%= @document.file.filename %> (<%= number_to_human_size(@document.file.byte_size) %>)</dd>
+    <dt>Ajouté par</dt><dd><%= @document.uploaded_by&.name || "—" %></dd>
+    <dt>Ajouté le</dt><dd><%= format_time(@document.created_at) %></dd>
+    <dt>Notes</dt><dd><%= @document.notes.present? ? simple_format(h(@document.notes)) : "—" %></dd>
+  </dl>
+</section>
+
+<section class="card">
+  <h2>Historique des versions</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Version</th><th>Fichier</th><th>Valide jusqu'au</th><th>Ajoutée le</th><th>Par</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% @versions.each do |version| %>
+          <tr class="<%= "archived" unless version.current? %>">
+            <td>
+              <%= link_to version_text(version), version %>
+              <% if version == @document %><span class="badge">Affichée</span><% end %>
+            </td>
+            <td><%= version.file.filename %></td>
+            <td><%= validity_badge(version) %></td>
+            <td><%= format_time(version.created_at) %></td>
+            <td><%= version.uploaded_by&.name || "—" %></td>
+            <td><%= link_to "Télécharger", download_document_path(version) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

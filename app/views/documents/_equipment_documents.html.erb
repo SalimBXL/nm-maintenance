@@ -1,0 +1,41 @@
+<%# Documents de l'équipement et documents de son modèle (versions actuelles seulement). %>
+<% documents = Document.current.kept.where(equipment_id: equipment.id)
+                       .or(Document.current.kept.where(equipment_model_id: equipment.equipment_model_id))
+                       .includes(:equipment, equipment_model: :manufacturer)
+                       .order(:document_type, :title) %>
+
+<section class="card">
+  <div class="page-title">
+    <h2>Documents techniques</h2>
+    <div class="actions">
+      <%= link_to "Voir tous", documents_path(equipment_id: equipment.id, all_versions: "1") %>
+      <% if policy(Document).create? && !equipment.archived? %>
+        <%= link_to "Ajouter un document", new_document_path(equipment_id: equipment.id), class: "button secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if documents.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Titre</th><th>Type</th><th>Rattaché à</th><th>Version</th><th>Valide jusqu'au</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% documents.each do |document| %>
+            <tr>
+              <td class="wrap"><%= link_to document.title, document %></td>
+              <td><%= document_type_label(document.document_type) %></td>
+              <td><%= document.equipment_id ? "Cet équipement" : "Modèle #{document.equipment_model.name}" %></td>
+              <td><%= version_text(document) %></td>
+              <td><%= validity_badge(document) %></td>
+              <td><%= link_to "Télécharger", download_document_path(document) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucun document pour cet équipement ni pour son modèle.</p>
+  <% end %>
+</section>

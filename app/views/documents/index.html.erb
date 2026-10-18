@@ -1,0 +1,86 @@
+<% content_for :title, "Documents techniques" %>
+
+<div class="page-title">
+  <h1>Documents techniques</h1>
+  <% if policy(Document).create? %>
+    <%= link_to "Ajouter un document", new_document_path, class: "button" %>
+  <% end %>
+</div>
+
+<%= form_with url: documents_path, method: :get, class: "filters" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Titre, équipement, modèle, fabricant…" %>
+
+  <%= f.select :document_type,
+               options_for_select(Document.document_types.keys.map { |key| [document_type_label(key), key] }, params[:document_type]),
+               { include_blank: "Tous les types" } %>
+
+  <%= f.select :validity,
+               options_for_select([["Expirés", "expired"], ["Expirent dans #{Document::EXPIRING_DAYS} jours", "expiring"]], params[:validity]),
+               { include_blank: "Toutes les validités" } %>
+
+  <label class="inline">
+    <%= f.check_box :all_versions, { checked: params[:all_versions] == "1" }, "1", nil %>
+    Toutes les versions
+  </label>
+
+  <label class="inline">
+    <%= f.check_box :archived, { checked: params[:archived] == "1" }, "1", nil %>
+    Inclure les archivés
+  </label>
+
+  <%= f.hidden_field :equipment_id, value: params[:equipment_id] if params[:equipment_id].present? %>
+  <%= f.hidden_field :equipment_model_id, value: params[:equipment_model_id] if params[:equipment_model_id].present? %>
+  <%= f.submit "Filtrer", name: nil %>
+  <%= link_to "Réinitialiser", documents_path %>
+<% end %>
+
+<p class="count"><%= @total %> document<%= "s" if @total > 1 %></p>
+
+<% if @documents.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Type</th>
+          <th>Rattaché à</th>
+          <th>Version</th>
+          <th>Valide jusqu'au</th>
+          <th>Ajouté le</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @documents.each do |document| %>
+          <tr class="<%= "archived" if document.archived? || !document.current? %>">
+            <td class="wrap">
+              <%= link_to document.title, document %>
+              <% if document.archived? %><span class="badge badge-archived">Archivé</span><% end %>
+              <% unless document.current? %><span class="badge badge-archived">Remplacé</span><% end %>
+            </td>
+            <td><%= document_type_label(document.document_type) %></td>
+            <td><%= document_target(document) %></td>
+            <td><%= version_text(document) %></td>
+            <td><%= validity_badge(document) %></td>
+            <td><%= format_date(document.created_at.to_date) %></td>
+            <td><%= link_to "Télécharger", download_document_path(document) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @pages > 1 %>
+    <nav class="pagination">
+      <% if @page > 1 %>
+        <%= link_to "← Précédent", documents_path(request.query_parameters.merge(page: @page - 1)) %>
+      <% end %>
+      <span>Page <%= @page %> sur <%= @pages %></span>
+      <% if @page < @pages %>
+        <%= link_to "Suivant →", documents_path(request.query_parameters.merge(page: @page + 1)) %>
+      <% end %>
+    </nav>
+  <% end %>
+<% else %>
+  <p class="empty">Aucun document ne correspond à ces critères.</p>
+<% end %>

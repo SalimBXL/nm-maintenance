@@ -1,0 +1,33 @@
+fr:
+  enums:
+    document:
+      document_type:
+        manual: "Manuel"
+        certificate: "Certificat"
+        conformity_declaration: "Déclaration de conformité"
+        report: "Rapport"
+        procedure: "Procédure"
+        other: "Autre"
+      document_type_help:
+        manual: "Manuel d'utilisation, notice ou guide de l'appareil."
+        certificate: "Certificat ou attestation (étalonnage, conformité, installation)."
+        conformity_declaration: "Déclaration de conformité du fabricant (marquage, normes applicables)."
+        report: "Rapport d'intervention, de contrôle ou d'essai."
+        procedure: "Procédure ou consigne de fonctionnement, de contrôle ou de sécurité."
+        other: "Tout autre document technique."
+  activerecord:
+    models:
+      document:
+        one: "Document"
+        other: "Documents"
+    attributes:
+      document:
+        equipment: "Équipement"
+        equipment_model: "Modèle"
+        document_type: "Type"
+        title: "Titre"
+        version_label: "Version"
+        valid_until: "Valide jusqu'au"
+        notes: "Notes"
+        file: "Fichier"
+        supersedes: "Version précédente"

@@ -34,10 +34,10 @@ module IncidentsHelper
 
   def transition_label(incident, target)
     case target
-    when "qualified" then "Qualifier l'incident"
-    when "in_progress" then incident.resolved? ? "Rouvrir (remettre en cours)" : "Prendre en charge (passer en cours)"
-    when "resolved" then "Marquer comme résolu"
-    when "closed" then "Clôturer l'incident"
+    when 'qualified' then "Qualifier l'incident"
+    when 'in_progress' then incident.resolved? ? 'Rouvrir (remettre en cours)' : 'Prendre en charge (passer en cours)'
+    when 'resolved' then 'Marquer comme résolu'
+    when 'closed' then "Clôturer l'incident"
     else incident_status_label(target)
     end
   end

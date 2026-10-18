@@ -1,9 +1,83 @@
+# Configuration RuboCop proposée pour Projet Maintenance.
+# À enregistrer sous le nom .rubocop.yml à la racine de l'application.
+
+# Les règles « Rails/... » viennent du gem rubocop-rails : il faut le charger.
+# RuboCop 1.72 ou plus récent :
 plugins:
   - rubocop-rails
+# Si RuboCop répond que « plugins » est inconnu (version plus ancienne),
+# remplacez les deux lignes ci-dessus par :
+#require:
+#  - rubocop-rails
 
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 3.4
+  SuggestExtensions: false
+  Exclude:
+    - "bin/**/*"
+    - "db/schema.rb"
+    - "vendor/**/*"
+    - "node_modules/**/*"
+    - "tmp/**/*"
+    - "storage/**/*"
+
+# --- Règles de style non retenues pour ce projet
+
+Style/Documentation:
+  Enabled: false        # un commentaire par classe n'apporte rien ici
+
+Style/FrozenStringLiteralComment:
+  Enabled: false        # à activer si vous voulez la ligne magique partout
+
+Rails/I18nLocaleTexts:
+  Enabled: false        # application en français uniquement : textes dans le code
+
+# --- Seuils de taille et de complexité (les valeurs par défaut sont très strictes)
 
 Layout/LineLength:
-  Max: 120
+  Max: 130
+
+Metrics/MethodLength:
+  Max: 25
+
+Metrics/AbcSize:
+  Max: 45
+
+Metrics/CyclomaticComplexity:
+  Max: 15
+
+Metrics/PerceivedComplexity:
+  Max: 15
+
+Metrics/ClassLength:
+  Max: 150
+  Exclude:
+    - "test/**/*"
+
+Metrics/BlockLength:
+  Exclude:
+    - "config/routes.rb"
+    - "test/**/*"
+    - "lib/tasks/**/*"
+
+# --- Exceptions voulues
+
+Rails/SkipsModelValidations:
+  Exclude:
+    - "test/**/*"         # update_columns sert à poser un état de départ dans les tests
+
+# --- Fichiers générés par Rails (authentification, production)
+
+Lint/AssignmentInCondition:
+  Exclude:
+    - "app/controllers/sessions_controller.rb"
+    - "app/controllers/passwords_controller.rb"
+    - "app/channels/application_cable/connection.rb"
+
+Rails/DynamicFindBy:
+  Exclude:
+    - "app/controllers/passwords_controller.rb"
+
+Style/GlobalStdStream:
+  Exclude:
+    - "config/environments/production.rb"

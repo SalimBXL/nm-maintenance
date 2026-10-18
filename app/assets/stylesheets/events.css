@@ -1,0 +1,4 @@
+.badge-event-planned { background: var(--bleu-clair); color: var(--bleu); }
+.badge-event-in-progress { background: #fdf0d2; color: #8a5a00; }
+.badge-event-completed { background: #dff3e6; color: var(--ok); }
+.badge-event-cancelled { background: #e6e8ec; color: var(--gris); }

@@ -1,0 +1,81 @@
+<% content_for :title, "Interventions" %>
+
+<div class="page-title">
+  <h1>Interventions</h1>
+  <% if policy(Event).create? %>
+    <%= link_to "Planifier une intervention", new_event_path, class: "button" %>
+  <% end %>
+</div>
+
+<%= form_with url: events_path, method: :get, class: "filters" do |f| %>
+  <%= f.select :status,
+               options_for_select([["En attente ou en cours", ""], ["Toutes", "all"]] +
+                                  Event.statuses.keys.map { |key| [event_status_label(key), key] }, params[:status]) %>
+
+  <%= f.select :event_type,
+               options_for_select(Event.event_types.keys.map { |key| [event_type_label(key), key] }, params[:event_type]),
+               { include_blank: "Tous les types" } %>
+
+  <%= f.select :department_id,
+               options_from_collection_for_select(@departments, :id, :name, params[:department_id]),
+               { include_blank: "Tous les départements" } %>
+
+  <label class="inline">
+    <%= f.check_box :mine, { checked: params[:mine] == "1" }, "1", nil %>
+    Mes interventions
+  </label>
+
+  <%= f.hidden_field :equipment_id, value: params[:equipment_id] if params[:equipment_id].present? %>
+  <%= f.hidden_field :incident_id, value: params[:incident_id] if params[:incident_id].present? %>
+  <%= f.submit "Filtrer", name: nil %>
+  <%= link_to "Réinitialiser", events_path %>
+<% end %>
+
+<p class="count"><%= @total %> intervention<%= "s" if @total > 1 %></p>
+
+<% if @events.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Équipement</th>
+          <th>Titre</th>
+          <th>Type</th>
+          <th>Statut</th>
+          <th>Date prévue</th>
+          <th>Intervenant</th>
+          <th>Incident</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @events.each do |event| %>
+          <tr class="<%= "archived" if event.completed? || event.cancelled? %>">
+            <td><%= link_to "##{event.id}", event %></td>
+            <td><%= link_to event.equipment.code, event.equipment %><br><small><%= location_label(event.equipment.location) %></small></td>
+            <td class="wrap"><%= link_to truncate(event.title, length: 60), event %></td>
+            <td><%= event_type_label(event.event_type) %></td>
+            <td><%= event_status_badge(event.status) %></td>
+            <td><%= format_date(event.scheduled_on) %></td>
+            <td><%= event.performed_by&.name || "—" %></td>
+            <td><%= event.incident_id ? link_to("##{event.incident_id}", incident_path(event.incident_id)) : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @pages > 1 %>
+    <nav class="pagination">
+      <% if @page > 1 %>
+        <%= link_to "← Précédent", events_path(request.query_parameters.merge(page: @page - 1)) %>
+      <% end %>
+      <span>Page <%= @page %> sur <%= @pages %></span>
+      <% if @page < @pages %>
+        <%= link_to "Suivant →", events_path(request.query_parameters.merge(page: @page + 1)) %>
+      <% end %>
+    </nav>
+  <% end %>
+<% else %>
+  <p class="empty">Aucune intervention ne correspond à ces critères.</p>
+<% end %>

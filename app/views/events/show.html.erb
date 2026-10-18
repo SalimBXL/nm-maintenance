@@ -1,0 +1,61 @@
+<% content_for :title, event_title(@event) %>
+
+<p class="breadcrumb"><%= link_to "← Interventions", events_path %></p>
+
+<div class="page-title">
+  <h1>
+    <%= event_title(@event) %>
+    <%= event_status_badge(@event.status) %>
+  </h1>
+
+  <div class="actions">
+    <% if policy(@event).update? %>
+      <%= link_to "Modifier", edit_event_path(@event), class: "button secondary" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @event.errors.any? %>
+  <div class="flash flash-alert">
+    <ul>
+      <% @event.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<section class="card">
+  <h2><%= @event.title %></h2>
+  <dl class="details">
+    <dt>Équipement</dt>
+    <dd><%= link_to @event.equipment.code, @event.equipment %> – <%= location_label(@event.equipment.location) %></dd>
+    <dt>Incident lié</dt>
+    <dd><%= @event.incident ? link_to("Incident ##{@event.incident.id}", @event.incident) : "—" %></dd>
+    <dt>Type</dt><dd><%= event_type_label(@event.event_type) %></dd>
+    <dt>Date prévue</dt><dd><%= format_date(@event.scheduled_on) %></dd>
+    <dt>Début</dt><dd><%= format_time(@event.started_at) %></dd>
+    <dt>Fin</dt><dd><%= format_time(@event.ended_at) %></dd>
+    <dt>Intervenant</dt><dd><%= @event.performed_by&.name || "—" %></dd>
+    <dt>Prestataire</dt><dd><%= @event.contractor.presence || "—" %></dd>
+    <dt>Durée d'indisponibilité</dt><dd><%= format_downtime(@event.downtime_minutes) %></dd>
+    <dt>Coût</dt><dd><%= format_cost(@event.cost_cents) %></dd>
+    <dt>Rapport</dt><dd><%= @event.report.present? ? simple_format(h(@event.report)) : "—" %></dd>
+  </dl>
+</section>
+
+<% if @allowed_targets.any? %>
+  <section class="card">
+    <h2>Actions</h2>
+    <% @allowed_targets.each do |target| %>
+      <%= render "transition_form", event: @event, target: target %>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @event.completed? && @event.incident && !@event.incident.closed? && !@event.incident.resolved? %>
+  <p class="hint">
+    Cette intervention est terminée : pensez à faire passer l'<%= link_to "incident ##{@event.incident.id}", @event.incident %>
+    au statut « résolu » s'il est réglé.
+  </p>
+<% end %>

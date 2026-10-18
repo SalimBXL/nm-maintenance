@@ -1,0 +1,50 @@
+<details class="transition">
+  <summary><%= event_transition_label(target) %></summary>
+
+  <%= form_with url: transition_event_path(event), method: :post, class: "form" do %>
+    <%= hidden_field_tag :to, target %>
+
+    <% if target == "in_progress" %>
+      <div class="field">
+        <%= label_tag "event_started_at", "Début" %>
+        <%= datetime_field_tag "event[started_at]", datetime_field_value(event.started_at || Time.current), id: "event_started_at" %>
+      </div>
+    <% end %>
+
+    <% if target == "completed" %>
+      <div class="field">
+        <%= label_tag "event_started_at", "Début" %>
+        <%= datetime_field_tag "event[started_at]", datetime_field_value(event.started_at), id: "event_started_at" %>
+      </div>
+      <div class="field">
+        <%= label_tag "event_ended_at", "Fin" %>
+        <%= datetime_field_tag "event[ended_at]", datetime_field_value(event.ended_at || Time.current), id: "event_ended_at" %>
+      </div>
+      <div class="field">
+        <%= label_tag "event_report", "Rapport (obligatoire)" %>
+        <%= text_area_tag "event[report]", event.report, rows: 4, id: "event_report" %>
+        <small>Ce qui a été fait, les pièces changées, les mesures, l'état de l'appareil à la fin.</small>
+      </div>
+      <div class="field">
+        <%= label_tag "event_downtime_minutes", "Durée d'indisponibilité (minutes)" %>
+        <%= number_field_tag "event[downtime_minutes]", event.downtime_minutes, min: 0, id: "event_downtime_minutes" %>
+        <small>Temps pendant lequel l'équipement n'a pas pu être utilisé. Laisser vide si inconnu.</small>
+      </div>
+      <div class="field">
+        <%= label_tag "event_cost_euros", "Coût (€)" %>
+        <%= text_field_tag "event[cost_euros]", event.cost_euros, id: "event_cost_euros", placeholder: "125,50" %>
+      </div>
+    <% end %>
+
+    <% if target == "cancelled" %>
+      <div class="field">
+        <%= label_tag "event_report", "Motif de l'annulation (facultatif)" %>
+        <%= text_area_tag "event[report]", event.report, rows: 2, id: "event_report" %>
+      </div>
+    <% end %>
+
+    <div class="actions">
+      <%= submit_tag event_transition_label(target), class: "button" %>
+    </div>
+  <% end %>
+</details>

@@ -98,9 +98,7 @@ class EquipmentsController < ApplicationController
   def filtered(scope)
     scope = scope.kept unless params[:archived] == '1'
     scope = scope.where(status: params[:status]) if Equipment.statuses.key?(params[:status])
-    if params[:department_id].present?
-      scope = scope.where(location_id: Location.where(department_id: params[:department_id]))
-    end
+    scope = scope.where(location_id: Location.where(department_id: params[:department_id])) if params[:department_id].present?
     scope = scope.where(location_id: params[:location_id]) if params[:location_id].present?
     if params[:category_id].present?
       scope = scope.where(equipment_model_id: EquipmentModel.where(category_id: params[:category_id]))

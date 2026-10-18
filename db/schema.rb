@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_17_162952) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_005629) do
   create_table "department_memberships", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "department_id", null: false
@@ -103,6 +103,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_162952) do
     t.index ["equipment_model_id"], name: "index_equipments_on_equipment_model_id"
     t.index ["location_id"], name: "index_equipments_on_location_id"
     t.index ["status"], name: "index_equipments_on_status"
+  end
+
+  create_table "events", force: :cascade do |t|
+    t.integer "equipment_id", null: false
+    t.integer "incident_id"
+    t.integer "performed_by_id"
+    t.string "event_type", default: "corrective", null: false
+    t.string "status", default: "planned", null: false
+    t.string "title", null: false
+    t.date "scheduled_on"
+    t.datetime "started_at"
+    t.datetime "ended_at"
+    t.string "contractor"
+    t.integer "cost_cents"
+    t.integer "downtime_minutes"
+    t.text "report"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["equipment_id"], name: "index_events_on_equipment_id"
+    t.index ["incident_id"], name: "index_events_on_incident_id"
+    t.index ["performed_by_id"], name: "index_events_on_performed_by_id"
+    t.index ["scheduled_on"], name: "index_events_on_scheduled_on"
+    t.index ["status"], name: "index_events_on_status"
   end
 
   create_table "incident_status_changes", force: :cascade do |t|
@@ -209,6 +232,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_162952) do
   add_foreign_key "equipment_moves", "users"
   add_foreign_key "equipments", "equipment_models"
   add_foreign_key "equipments", "locations"
+  add_foreign_key "events", "equipments"
+  add_foreign_key "events", "incidents"
+  add_foreign_key "events", "users", column: "performed_by_id"
   add_foreign_key "incident_status_changes", "incidents"
   add_foreign_key "incident_status_changes", "users"
   add_foreign_key "incidents", "equipments"

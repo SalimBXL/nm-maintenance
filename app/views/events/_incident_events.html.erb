@@ -1,0 +1,36 @@
+<% events = Event.where(incident_id: incident.id).order(:id) %>
+
+<section class="card">
+  <div class="page-title">
+    <h2>Interventions liées</h2>
+    <div class="actions">
+      <% if policy(Event.new(incident: incident, equipment: incident.equipment)).create? %>
+        <%= link_to "Saisir une intervention", new_event_path(incident_id: incident.id), class: "button secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if events.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>N°</th><th>Titre</th><th>Type</th><th>Statut</th><th>Intervenant</th><th>Fin</th></tr>
+        </thead>
+        <tbody>
+          <% events.each do |event| %>
+            <tr>
+              <td><%= link_to "##{event.id}", event %></td>
+              <td class="wrap"><%= truncate(event.title, length: 60) %></td>
+              <td><%= event_type_label(event.event_type) %></td>
+              <td><%= event_status_badge(event.status) %></td>
+              <td><%= event.performed_by&.name || "—" %></td>
+              <td><%= format_time(event.ended_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucune intervention n'est encore liée à cet incident.</p>
+  <% end %>
+</section>

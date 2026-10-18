@@ -1,0 +1,6 @@
+<% content_for :title, "Modifier #{event_title(@event)}" %>
+
+<p class="breadcrumb"><%= link_to "← #{event_title(@event)}", event_path(@event) %></p>
+<h1>Modifier <%= event_title(@event).downcase %></h1>
+
+<%= render "form" %>

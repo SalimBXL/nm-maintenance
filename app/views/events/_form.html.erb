@@ -1,0 +1,105 @@
+<% manager = Current.user.admin? || Current.user.technical_manager? %>
+
+<%= form_with model: @event, class: "form" do |f| %>
+  <% if @event.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% @event.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if @event.new_record? && @event.incident %>
+    <%= f.hidden_field :incident_id %>
+    <div class="field">
+      <label>Équipement</label>
+      <strong><%= @event.equipment.code %> – <%= location_label(@event.equipment.location) %></strong>
+      <small>Intervention liée à l'<%= link_to "incident ##{@event.incident.id}", @event.incident %>.</small>
+    </div>
+  <% elsif @event.new_record? %>
+    <div class="field">
+      <%= f.label :equipment_id, "Équipement" %>
+      <%= f.select :equipment_id,
+                   @equipments.map { |equipment| ["#{equipment.code} – #{equipment.equipment_model.name} (#{location_label(equipment.location)})", equipment.id] },
+                   { include_blank: "Choisir l'équipement…" } %>
+    </div>
+  <% else %>
+    <div class="field">
+      <label>Équipement</label>
+      <strong><%= @event.equipment.code %> – <%= location_label(@event.equipment.location) %></strong>
+    </div>
+  <% end %>
+
+  <% if manager || @event.new_record? %>
+    <fieldset class="field-group">
+      <legend>Type d'intervention</legend>
+      <%= render "incidents/radio_group", name: "event[event_type]", id_prefix: "event_event_type",
+                                          options: event_type_options, selected: @event.event_type %>
+    </fieldset>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :title, "Titre" %>
+    <%= f.text_field :title, placeholder: "Ex. Remplacement du câble du détecteur" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :scheduled_on, "Date prévue" %>
+    <%= f.date_field :scheduled_on %>
+  </div>
+
+  <% if manager %>
+    <div class="field">
+      <%= f.label :performed_by_id, "Intervenant" %>
+      <%= f.select :performed_by_id, @assignees.map { |user| [user.name, user.id] }, { include_blank: "Non assigné" } %>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :contractor, "Prestataire" %>
+    <%= f.text_field :contractor %>
+    <small>Société extérieure, le cas échéant.</small>
+  </div>
+
+  <% if @event.persisted? %>
+    <% if manager && @incidents %>
+      <div class="field">
+        <%= f.label :incident_id, "Incident lié" %>
+        <%= f.select :incident_id, @incidents.map { |incident| ["##{incident.id} – #{truncate(incident.description, length: 50)}", incident.id] },
+                     { include_blank: "Aucun" } %>
+      </div>
+    <% end %>
+
+    <div class="field">
+      <%= f.label :started_at, "Début" %>
+      <%= f.datetime_field :started_at %>
+    </div>
+
+    <div class="field">
+      <%= f.label :ended_at, "Fin" %>
+      <%= f.datetime_field :ended_at %>
+    </div>
+
+    <div class="field">
+      <%= f.label :downtime_minutes, "Durée d'indisponibilité (minutes)" %>
+      <%= f.number_field :downtime_minutes, min: 0 %>
+    </div>
+
+    <div class="field">
+      <%= f.label :cost_euros, "Coût (€)" %>
+      <%= f.text_field :cost_euros, placeholder: "125,50" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :report, "Rapport" %>
+      <%= f.text_area :report, rows: 5 %>
+    </div>
+  <% end %>
+
+  <div class="actions">
+    <%= f.submit @event.new_record? ? "Enregistrer l'intervention" : "Enregistrer", class: "button" %>
+    <%= link_to "Annuler", @event.new_record? ? events_path : event_path(@event) %>
+  </div>
+<% end %>

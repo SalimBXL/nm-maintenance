@@ -16,6 +16,12 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :events, path: 'interventions', except: :destroy do
+    member do
+      post :transition
+    end
+  end
+
   resource :session
   resources :passwords, param: :token
 

@@ -1,0 +1,36 @@
+<% events = Event.where(equipment_id: equipment.id).order(id: :desc).limit(10) %>
+
+<section class="card">
+  <div class="page-title">
+    <h2>Interventions</h2>
+    <div class="actions">
+      <%= link_to "Voir toutes", events_path(equipment_id: equipment.id, status: "all") %>
+      <% if policy(Event).create? && !equipment.archived? %>
+        <%= link_to "Planifier une intervention", new_event_path(equipment_id: equipment.id), class: "button secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if events.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>N°</th><th>Titre</th><th>Type</th><th>Statut</th><th>Date prévue</th></tr>
+        </thead>
+        <tbody>
+          <% events.each do |event| %>
+            <tr>
+              <td><%= link_to "##{event.id}", event %></td>
+              <td class="wrap"><%= truncate(event.title, length: 60) %></td>
+              <td><%= event_type_label(event.event_type) %></td>
+              <td><%= event_status_badge(event.status) %></td>
+              <td><%= format_date(event.scheduled_on) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucune intervention enregistrée pour cet équipement.</p>
+  <% end %>
+</section>

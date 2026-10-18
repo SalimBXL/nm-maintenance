@@ -1,0 +1,41 @@
+fr:
+  enums:
+    event:
+      event_type:
+        preventive: "Préventive"
+        corrective: "Corrective"
+        quality_control: "Contrôle qualité"
+        calibration: "Étalonnage"
+        software_update: "Mise à jour logicielle"
+      event_type_help:
+        preventive: "Maintenance prévue pour éviter les pannes (révision, nettoyage, remplacement préventif)."
+        corrective: "Réparation d'une panne ou d'un dysfonctionnement, le plus souvent à la suite d'un incident."
+        quality_control: "Contrôle périodique des performances ou de la conformité de l'appareil."
+        calibration: "Réglage ou vérification d'un instrument de mesure par rapport à une référence (par exemple un activimètre)."
+        software_update: "Installation d'une mise à jour ou d'un correctif logiciel."
+      status:
+        planned: "Planifiée"
+        in_progress: "En cours"
+        completed: "Terminée"
+        cancelled: "Annulée"
+  activerecord:
+    models:
+      event:
+        one: "Intervention"
+        other: "Interventions"
+    attributes:
+      event:
+        equipment: "Équipement"
+        incident: "Incident"
+        performed_by: "Intervenant"
+        event_type: "Type"
+        status: "Statut"
+        title: "Titre"
+        scheduled_on: "Date prévue"
+        started_at: "Début"
+        ended_at: "Fin"
+        contractor: "Prestataire"
+        cost_cents: "Coût"
+        cost_euros: "Coût"
+        downtime_minutes: "Durée d'indisponibilité"
+        report: "Rapport"

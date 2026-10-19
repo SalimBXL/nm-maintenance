@@ -1,0 +1,21 @@
+<% content_for :title, "Jeton créé" %>
+
+<h1>Jeton « <%= @token.name %> » créé</h1>
+
+<p class="flash flash-alert">
+  Copiez ce jeton maintenant : il ne sera <strong>plus jamais affiché</strong>. Si vous le perdez, révoquez-le et créez-en un autre.
+</p>
+
+<section class="card">
+  <h2>Votre jeton</h2>
+  <p><code id="api-token-value"><%= @token.plain_token %></code></p>
+  <p class="hint">Valable jusqu'au <%= format_time(@token.expires_at) %>. Gardez-le secret : il donne accès à l'application avec vos droits.</p>
+</section>
+
+<section class="card">
+  <h2>Exemple d'utilisation</h2>
+  <pre><code>curl -H "Authorization: Bearer <%= @token.plain_token %>" <%= request.base_url %>/api/v1/me</code></pre>
+  <p class="hint">La spécification de l'API (OpenAPI) est disponible sur <code><%= request.base_url %>/api/v1/openapi.yaml</code>.</p>
+</section>
+
+<p><%= link_to "← Mes jetons d'API", api_tokens_path %></p>

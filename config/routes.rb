@@ -50,4 +50,27 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  resources :api_tokens, path: 'jetons-api', only: %i[index new create destroy]
+
+  namespace :api do
+    namespace :v1, defaults: { format: :json } do
+      get 'me', to: 'me#show'
+      get 'openapi.yaml', to: 'openapi#show', as: :openapi, format: false
+
+      resources :equipments, only: %i[index show]
+
+      resources :incidents, only: %i[index show create] do
+        member { post :transition }
+      end
+
+      resources :events, only: %i[index show create] do
+        member do
+          post :start
+          post :complete
+          post :cancel
+        end
+      end
+    end
+  end
 end

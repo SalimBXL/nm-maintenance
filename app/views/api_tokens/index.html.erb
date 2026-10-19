@@ -1,0 +1,49 @@
+<% content_for :title, "Jetons d'API" %>
+
+<div class="page-title">
+  <h1>Mes jetons d'API</h1>
+  <%= link_to "Créer un jeton", new_api_token_path, class: "button" %>
+</div>
+
+<p class="hint">
+  Un jeton permet à un programme (par exemple le futur client en terminal) d'utiliser l'application
+  avec vos droits, sans mot de passe. Il cesse de fonctionner s'il est révoqué, s'il expire ou si votre compte n'est plus actif.
+</p>
+
+<% if @tokens.any? %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Jeton</th><th>Créé le</th><th>Expire le</th><th>Dernière utilisation</th><th>Statut</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% @tokens.each do |token| %>
+          <tr class="<%= "archived" unless token.usable? %>">
+            <td><%= token.name %></td>
+            <td><code>mt_…<%= token.hint %></code></td>
+            <td><%= format_time(token.created_at) %></td>
+            <td><%= format_time(token.expires_at) %></td>
+            <td><%= format_time(token.last_used_at) %></td>
+            <td>
+              <% if token.revoked_at %>
+                <span class="badge badge-archived">Révoqué</span>
+              <% elsif token.expires_at <= Time.current %>
+                <span class="badge badge-archived">Expiré</span>
+              <% else %>
+                <span class="badge badge-event-completed">Actif</span>
+              <% end %>
+            </td>
+            <td class="row-actions">
+              <% if token.usable? %>
+                <%= button_to "Révoquer", api_token_path(token), method: :delete, class: "link-button dark",
+                              form: { data: { turbo_confirm: "Révoquer le jeton « #{token.name} » ? Les programmes qui l'utilisent cesseront de fonctionner." } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="empty">Vous n'avez pas encore de jeton.</p>
+<% end %>

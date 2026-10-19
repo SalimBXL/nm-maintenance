@@ -24,10 +24,10 @@ class DashboardSummary
   # Part des équipements en service parmi ceux qui ne sont pas hors service
   # (instantané, pas un indicateur de disponibilité sur une période).
   def in_service_percent
-    active = equipment_total - equipment_by_status["decommissioned"]
+    active = equipment_total - equipment_by_status['decommissioned']
     return nil if active.zero?
 
-    (equipment_by_status["in_service"] * 100.0 / active).round
+    (equipment_by_status['in_service'] * 100.0 / active).round
   end
 
   # --- Incidents
@@ -42,7 +42,7 @@ class DashboardSummary
   end
 
   def incidents_to_qualify_count
-    Incident.where(status: "declared").count
+    Incident.where(status: 'declared').count
   end
 
   # Incidents critiques puis majeurs encore ouverts, les plus anciens d'abord.
@@ -56,16 +56,16 @@ class DashboardSummary
   # --- Interventions
 
   def events_in_progress_count
-    Event.where(status: "in_progress").count
+    Event.where(status: 'in_progress').count
   end
 
   def events_upcoming_count
-    Event.where(status: "planned", scheduled_on: @today..(@today + UPCOMING_DAYS)).count
+    Event.where(status: 'planned', scheduled_on: @today..(@today + UPCOMING_DAYS)).count
   end
 
   # Planifiées dont la date prévue est dépassée.
   def events_overdue_count
-    Event.where(status: "planned").where(scheduled_on: ...@today).count
+    Event.where(status: 'planned').where(scheduled_on: ...@today).count
   end
 
   # --- Documents (versions actuelles non archivées)
@@ -81,9 +81,9 @@ class DashboardSummary
   # --- Par département
 
   def departments_overview
-    totals = Equipment.kept.joins(:location).group("locations.department_id").count
-    down = Equipment.kept.where(status: "out_of_order").joins(:location).group("locations.department_id").count
-    incidents = Incident.unclosed.joins(equipment: :location).group("locations.department_id").count
+    totals = Equipment.kept.joins(:location).group('locations.department_id').count
+    down = Equipment.kept.where(status: 'out_of_order').joins(:location).group('locations.department_id').count
+    incidents = Incident.unclosed.joins(equipment: :location).group('locations.department_id').count
 
     Department.kept.order(:name).map do |department|
       {
@@ -99,13 +99,13 @@ class DashboardSummary
 
   def my_tasks
     tasks = []
-    tasks << task("Incidents à qualifier", Incident.where(status: "declared")) if manager?
+    tasks << task('Incidents à qualifier', Incident.where(status: 'declared')) if manager?
 
     if @user.reporter?
-      tasks << task("Mes incidents ouverts", Incident.unclosed.where(reported_by_id: @user.id))
+      tasks << task('Mes incidents ouverts', Incident.unclosed.where(reported_by_id: @user.id))
     else
-      tasks << task("Incidents qui me sont assignés", Incident.unclosed.where(assigned_to_id: @user.id))
-      tasks << task("Mes interventions en attente ou en cours", Event.open_ones.where(performed_by_id: @user.id))
+      tasks << task('Incidents qui me sont assignés', Incident.unclosed.where(assigned_to_id: @user.id))
+      tasks << task('Mes interventions en attente ou en cours', Event.open_ones.where(performed_by_id: @user.id))
     end
 
     tasks

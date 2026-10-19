@@ -1,0 +1,637 @@
+openapi: 3.0.3
+info:
+  title: Projet Maintenance – API
+  version: "1.0.0"
+  description: |
+    API de gestion de maintenance d'équipements de médecine nucléaire.
+
+    **Authentification** : jeton personnel créé depuis l'interface web (« Jetons API »),
+    envoyé dans l'en-tête `Authorization: Bearer mt_...`. Le jeton expire, peut être révoqué
+    et cesse de fonctionner si le compte de son propriétaire n'est plus actif.
+
+    **Droits** : identiques à ceux de l'interface web ; ils dépendent du rôle de l'utilisateur.
+
+    **Erreurs** : toutes les erreurs ont la forme `{ "error": { "code", "message", "details" } }`.
+
+    **Pagination** : `page` et `per_page` (25 par défaut, 100 au maximum).
+
+    **Dates** : format ISO 8601.
+
+    Ce premier lot couvre l'utilisateur courant, le parc, les incidents et les interventions.
+    Les départements, locaux, catégories, modèles, documents, import et audit viendront ensuite.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Utilisateur
+  - name: Équipements
+  - name: Incidents
+  - name: Interventions
+paths:
+  /openapi.yaml:
+    get:
+      summary: Spécification OpenAPI de l'API
+      description: Cette spécification, sans authentification.
+      security: []
+      responses:
+        "200":
+          description: Document OpenAPI (YAML).
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /me:
+    get:
+      tags: [Utilisateur]
+      summary: Utilisateur identifié par le jeton
+      responses:
+        "200":
+          description: L'utilisateur courant et ses départements.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /equipments:
+    get:
+      tags: [Équipements]
+      summary: Liste des équipements
+      parameters:
+        - { name: department_id, in: query, schema: { type: integer } }
+        - { name: location_id, in: query, schema: { type: integer } }
+        - { name: category_id, in: query, schema: { type: integer } }
+        - name: status
+          in: query
+          schema: { type: string, enum: [in_service, out_of_order, under_maintenance, decommissioned] }
+        - name: q
+          in: query
+          description: Recherche sur le code, le numéro de série, le modèle et le fabricant.
+          schema: { type: string }
+        - name: archived
+          in: query
+          description: "1 pour inclure les équipements archivés."
+          schema: { type: string, enum: ["1"] }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Page d'équipements.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Equipment" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /equipments/{id}:
+    get:
+      tags: [Équipements]
+      summary: Fiche d'un équipement
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: L'équipement.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Equipment" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /incidents:
+    get:
+      tags: [Incidents]
+      summary: Liste des incidents
+      description: Par défaut, uniquement les incidents ouverts (non clôturés).
+      parameters:
+        - name: status
+          in: query
+          description: Un statut, ou `all` pour tous. Par défaut, les incidents ouverts.
+          schema: { type: string, enum: [all, declared, qualified, in_progress, resolved, closed] }
+        - name: severity
+          in: query
+          schema: { type: string, enum: [critical, major, minor] }
+        - { name: equipment_id, in: query, schema: { type: integer } }
+        - { name: department_id, in: query, schema: { type: integer } }
+        - name: mine
+          in: query
+          description: "1 pour les incidents que j'ai déclarés ou qui me sont assignés."
+          schema: { type: string, enum: ["1"] }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Page d'incidents.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Incident" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Incidents]
+      summary: Déclarer un incident
+      description: |
+        Un technicien ou un déclarant ne peut déclarer un incident que sur un équipement
+        d'un département dont il est membre.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [incident]
+              properties:
+                incident:
+                  type: object
+                  required: [equipment_id, description]
+                  properties:
+                    equipment_id: { type: integer }
+                    description: { type: string }
+                    severity: { type: string, enum: [critical, major, minor], default: minor }
+                    nature: { type: string, enum: [technical, safety, radiation_protection], default: technical }
+                    detected_at: { type: string, format: date-time }
+      responses:
+        "201":
+          description: Incident déclaré.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Incident" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /incidents/{id}:
+    get:
+      tags: [Incidents]
+      summary: Fiche d'un incident
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: L'incident, avec les changements de statut permis à l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Incident" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /incidents/{id}/transition:
+    post:
+      tags: [Incidents]
+      summary: Changer le statut d'un incident
+      description: |
+        Workflow : declared → qualified → in_progress → resolved → closed (un incident résolu
+        peut être remis en cours avec un commentaire). La qualification exige une personne
+        assignée ; la clôture exige une cause racine. Les transitions permises dépendent du rôle
+        (voir `allowed_transitions`).
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to: { type: string, enum: [qualified, in_progress, resolved, closed] }
+                comment: { type: string }
+                incident:
+                  type: object
+                  properties:
+                    severity: { type: string, enum: [critical, major, minor] }
+                    nature: { type: string, enum: [technical, safety, radiation_protection] }
+                    assigned_to_id: { type: integer }
+                    mandatory_declaration: { type: boolean }
+                    root_cause: { type: string }
+                    corrective_action: { type: string }
+      responses:
+        "200":
+          description: Incident mis à jour.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Incident" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /events:
+    get:
+      tags: [Interventions]
+      summary: Liste des interventions
+      description: Par défaut, les interventions en attente ou en cours.
+      parameters:
+        - name: status
+          in: query
+          description: Un statut, ou `all` pour toutes. Par défaut, les interventions en attente ou en cours.
+          schema: { type: string, enum: [all, planned, in_progress, completed, cancelled] }
+        - name: event_type
+          in: query
+          schema: { type: string, enum: [preventive, corrective, quality_control, calibration, software_update] }
+        - { name: equipment_id, in: query, schema: { type: integer } }
+        - { name: incident_id, in: query, schema: { type: integer } }
+        - { name: department_id, in: query, schema: { type: integer } }
+        - name: mine
+          in: query
+          description: "1 pour les interventions dont je suis l'intervenant."
+          schema: { type: string, enum: ["1"] }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Page d'interventions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Event" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Interventions]
+      summary: Créer (planifier ou saisir) une intervention
+      description: |
+        Administrateur et responsable technique : sur tout équipement. Technicien : uniquement
+        sur un incident qui lui est assigné (l'équipement et l'intervenant sont déduits).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event]
+              properties:
+                event:
+                  type: object
+                  required: [title]
+                  properties:
+                    equipment_id: { type: integer }
+                    incident_id: { type: integer }
+                    event_type: { type: string, enum: [preventive, corrective, quality_control, calibration, software_update] }
+                    title: { type: string }
+                    scheduled_on: { type: string, format: date }
+                    performed_by_id: { type: integer }
+                    contractor: { type: string }
+      responses:
+        "201":
+          description: Intervention créée (statut `planned`).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Event" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /events/{id}:
+    get:
+      tags: [Interventions]
+      summary: Fiche d'une intervention
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: L'intervention.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Event" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /events/{id}/start:
+    post:
+      tags: [Interventions]
+      summary: Démarrer une intervention
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: object
+                  properties:
+                    started_at: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Intervention démarrée.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Event" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /events/{id}/complete:
+    post:
+      tags: [Interventions]
+      summary: Terminer une intervention
+      description: Le rapport est obligatoire ; la fin vaut l'instant présent si elle n'est pas fournie.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event]
+              properties:
+                event:
+                  type: object
+                  required: [report]
+                  properties:
+                    report: { type: string }
+                    started_at: { type: string, format: date-time }
+                    ended_at: { type: string, format: date-time }
+                    downtime_minutes: { type: integer, minimum: 0 }
+                    cost_euros:
+                      type: string
+                      description: Montant en euros, par exemple « 125,50 » (stocké en centimes).
+                    contractor: { type: string }
+      responses:
+        "200":
+          description: Intervention terminée.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Event" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /events/{id}/cancel:
+    post:
+      tags: [Interventions]
+      summary: Annuler une intervention
+      description: Réservé aux administrateurs et aux responsables techniques.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: object
+                  properties:
+                    report:
+                      type: string
+                      description: Motif de l'annulation (facultatif).
+      responses:
+        "200":
+          description: Intervention annulée.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Event" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Jeton personnel créé depuis l'interface web (préfixe `mt_`).
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+  responses:
+    Unauthorized:
+      description: Jeton manquant, invalide, expiré ou révoqué (ou compte non actif).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: L'utilisateur n'a pas le droit d'effectuer cette action.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Ressource introuvable.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationFailed:
+      description: Données invalides ; `details` donne les messages par champ.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, example: validation_failed }
+            message: { type: string }
+            details:
+              type: object
+              additionalProperties:
+                type: array
+                items: { type: string }
+    PageMeta:
+      type: object
+      properties:
+        page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        total_pages: { type: integer }
+    Person:
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer }
+        name: { type: string }
+    Department:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [reporter, technician, technical_manager, admin] }
+        valid_until: { type: string, format: date, nullable: true }
+        departments:
+          type: array
+          items: { $ref: "#/components/schemas/Department" }
+    Equipment:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string, example: SPECT-GE-01 }
+        serial_number: { type: string, nullable: true }
+        status: { type: string, enum: [in_service, out_of_order, under_maintenance, decommissioned] }
+        criticality: { type: string, enum: [low, medium, high] }
+        category:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            code_prefix: { type: string }
+        manufacturer:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            code: { type: string }
+        model:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        location:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            code: { type: string }
+            department: { $ref: "#/components/schemas/Department" }
+        acquired_on: { type: string, format: date, nullable: true }
+        commissioned_on: { type: string, format: date, nullable: true }
+        warranty_ends_on: { type: string, format: date, nullable: true }
+        decommissioned_on: { type: string, format: date, nullable: true }
+        notes: { type: string, nullable: true }
+        archived: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Incident:
+      type: object
+      properties:
+        id: { type: integer }
+        equipment:
+          type: object
+          properties:
+            id: { type: integer }
+            code: { type: string }
+        severity: { type: string, enum: [critical, major, minor] }
+        nature: { type: string, enum: [technical, safety, radiation_protection] }
+        status: { type: string, enum: [declared, qualified, in_progress, resolved, closed] }
+        description: { type: string }
+        detected_at: { type: string, format: date-time }
+        resolved_at: { type: string, format: date-time, nullable: true }
+        closed_at: { type: string, format: date-time, nullable: true }
+        root_cause: { type: string, nullable: true }
+        corrective_action: { type: string, nullable: true }
+        mandatory_declaration: { type: boolean }
+        reported_by: { $ref: "#/components/schemas/Person" }
+        assigned_to: { $ref: "#/components/schemas/Person" }
+        allowed_transitions:
+          type: array
+          description: Statuts vers lesquels l'utilisateur courant peut faire passer l'incident.
+          items: { type: string }
+        created_at: { type: string, format: date-time }
+    Event:
+      type: object
+      properties:
+        id: { type: integer }
+        equipment:
+          type: object
+          properties:
+            id: { type: integer }
+            code: { type: string }
+        incident_id: { type: integer, nullable: true }
+        event_type: { type: string, enum: [preventive, corrective, quality_control, calibration, software_update] }
+        status: { type: string, enum: [planned, in_progress, completed, cancelled] }
+        title: { type: string }
+        scheduled_on: { type: string, format: date, nullable: true }
+        started_at: { type: string, format: date-time, nullable: true }
+        ended_at: { type: string, format: date-time, nullable: true }
+        performed_by: { $ref: "#/components/schemas/Person" }
+        contractor: { type: string, nullable: true }
+        cost_cents: { type: integer, nullable: true }
+        downtime_minutes: { type: integer, nullable: true }
+        report: { type: string, nullable: true }
+        allowed_transitions:
+          type: array
+          description: Statuts vers lesquels l'utilisateur courant peut faire passer l'intervention.
+          items: { type: string }
+        created_at: { type: string, format: date-time }

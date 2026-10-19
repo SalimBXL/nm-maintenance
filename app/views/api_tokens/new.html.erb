@@ -1,0 +1,34 @@
+<% content_for :title, "Créer un jeton d'API" %>
+
+<p class="breadcrumb"><%= link_to "← Mes jetons d'API", api_tokens_path %></p>
+<h1>Créer un jeton d'API</h1>
+
+<%# Pas de Turbo : la réponse affiche le jeton, qui ne doit pas passer par une redirection. %>
+<%= form_with model: @token, url: api_tokens_path, class: "form", data: { turbo: false } do |f| %>
+  <% if @token.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% @token.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name, "Nom du jeton" %>
+    <%= f.text_field :name, placeholder: "Ex. Poste du laboratoire 2" %>
+    <small>Pour reconnaître où le jeton est utilisé.</small>
+  </div>
+
+  <fieldset class="field-group">
+    <legend>Durée de validité</legend>
+    <%= render "incidents/radio_group", name: "api_token[duration]", id_prefix: "api_token_duration",
+                                        options: duration_options, selected: params.dig(:api_token, :duration).presence || 365 %>
+  </fieldset>
+
+  <div class="actions">
+    <%= f.submit "Créer le jeton", class: "button" %>
+    <%= link_to "Annuler", api_tokens_path %>
+  </div>
+<% end %>

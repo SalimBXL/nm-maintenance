@@ -13,6 +13,7 @@
     </nav>
     <div class="user">
       <span><%= Current.user.name %></span>
+      <%= link_to "Jetons API", api_tokens_path %>
       <%= button_to "Se déconnecter", session_path, method: :delete, class: "link-button" %>
     </div>
   <% end %>

@@ -1,0 +1,6 @@
+<%# Locals : key, label, value, path ; tone facultatif (:danger, :warn, :ok) %>
+<% tone = local_assigns[:tone] %>
+<%= link_to path, class: "kpi#{" kpi-#{tone}" if tone}", data: { kpi: key } do %>
+  <span class="kpi-value"><%= value %></span>
+  <span class="kpi-label"><%= label %></span>
+<% end %>

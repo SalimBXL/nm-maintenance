@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
+  root 'dashboard#show'
+  get 'tableau-de-bord', to: 'dashboard#show', as: :dashboard
   get 'up' => 'rails/health#show', as: :rails_health_check
-
-  root 'equipments#index'
 
   resources :equipments do
     member do

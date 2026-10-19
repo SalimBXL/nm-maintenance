@@ -1,0 +1,20 @@
+<h3><%= task[:title] %> <span class="badge"><%= task[:total] %></span></h3>
+<ul class="task-list">
+  <% task[:records].each do |record| %>
+    <li>
+      <% if record.is_a?(Incident) %>
+        <%= link_to "Incident ##{record.id}", record %> · <%= record.equipment.code %>
+        <%= severity_badge(record.severity) %>
+        <span class="task-text"><%= truncate(record.description, length: 70) %></span>
+      <% else %>
+        <%= link_to "Intervention ##{record.id}", record %> · <%= record.equipment.code %>
+        <%= event_status_badge(record.status) %>
+        <span class="task-text"><%= truncate(record.title, length: 70) %>
+          <% if record.scheduled_on %>(prévue le <%= format_date(record.scheduled_on) %>)<% end %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+<% if task[:total] > task[:records].size %>
+  <p class="hint">Et <%= task[:total] - task[:records].size %> autre<%= "s" if task[:total] - task[:records].size > 1 %>.</p>
+<% end %>

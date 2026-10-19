@@ -2,6 +2,7 @@
   <%= link_to "Maintenance", root_path, class: "brand" %>
   <% if Current.user %>
     <nav>
+      <%= link_to "Tableau de bord", dashboard_path %>
       <%= link_to "Parc", equipments_path %>
       <%= link_to "Incidents", incidents_path %>
       <%= link_to "Interventions", events_path %>

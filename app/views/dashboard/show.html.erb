@@ -1,0 +1,130 @@
+<% content_for :title, "Tableau de bord" %>
+<% summary = @summary %>
+<% equipment = summary.equipment_by_status %>
+<% incidents = summary.open_incidents_by_severity %>
+
+<div class="page-title">
+  <h1>Tableau de bord</h1>
+  <p class="hint"><%= l(Time.zone.today, format: :long) %></p>
+</div>
+
+<% tasks = summary.my_tasks.select { |task| task[:total].positive? } %>
+<section class="card" data-section="tasks">
+  <h2>À traiter</h2>
+  <% if tasks.any? %>
+    <% tasks.each do |task| %>
+      <%= render "dashboard/task", task: task %>
+    <% end %>
+  <% else %>
+    <p class="empty">Rien à traiter pour le moment.</p>
+  <% end %>
+</section>
+
+<section>
+  <h2>Parc : <%= summary.equipment_total %> équipement<%= "s" if summary.equipment_total > 1 %>
+    <% if summary.in_service_percent %><small>(<%= summary.in_service_percent %> % en service)</small><% end %></h2>
+  <div class="kpis">
+    <%= render "dashboard/kpi", key: "equipment-in_service", label: "En service", value: equipment["in_service"],
+                                path: equipments_path(status: "in_service"), tone: :ok %>
+    <%= render "dashboard/kpi", key: "equipment-out_of_order", label: "En panne", value: equipment["out_of_order"],
+                                path: equipments_path(status: "out_of_order"), tone: (:danger if equipment["out_of_order"].positive?) %>
+    <%= render "dashboard/kpi", key: "equipment-under_maintenance", label: "En maintenance", value: equipment["under_maintenance"],
+                                path: equipments_path(status: "under_maintenance"), tone: (:warn if equipment["under_maintenance"].positive?) %>
+    <%= render "dashboard/kpi", key: "equipment-decommissioned", label: "Hors service", value: equipment["decommissioned"],
+                                path: equipments_path(status: "decommissioned") %>
+  </div>
+</section>
+
+<section>
+  <h2>Incidents ouverts : <%= summary.open_incidents_total %></h2>
+  <div class="kpis">
+    <%= render "dashboard/kpi", key: "incidents-critical", label: "Critiques", value: incidents["critical"],
+                                path: incidents_path(severity: "critical"), tone: (:danger if incidents["critical"].positive?) %>
+    <%= render "dashboard/kpi", key: "incidents-major", label: "Majeurs", value: incidents["major"],
+                                path: incidents_path(severity: "major"), tone: (:warn if incidents["major"].positive?) %>
+    <%= render "dashboard/kpi", key: "incidents-minor", label: "Mineurs", value: incidents["minor"],
+                                path: incidents_path(severity: "minor") %>
+    <%= render "dashboard/kpi", key: "incidents-to_qualify", label: "À qualifier", value: summary.incidents_to_qualify_count,
+                                path: incidents_path(status: "declared"),
+                                tone: (:warn if summary.incidents_to_qualify_count.positive?) %>
+  </div>
+</section>
+
+<section>
+  <h2>Interventions</h2>
+  <div class="kpis">
+    <%= render "dashboard/kpi", key: "events-in_progress", label: "En cours", value: summary.events_in_progress_count,
+                                path: events_path(status: "in_progress") %>
+    <%= render "dashboard/kpi", key: "events-upcoming", label: "Prévues dans les #{DashboardSummary::UPCOMING_DAYS} jours",
+                                value: summary.events_upcoming_count, path: events_path(status: "planned") %>
+    <%= render "dashboard/kpi", key: "events-overdue", label: "En retard", value: summary.events_overdue_count,
+                                path: events_path(status: "planned"),
+                                tone: (:danger if summary.events_overdue_count.positive?) %>
+  </div>
+</section>
+
+<section>
+  <h2>Documents techniques</h2>
+  <div class="kpis">
+    <%= render "dashboard/kpi", key: "documents-expired", label: "Expirés", value: summary.documents_expired_count,
+                                path: documents_path(validity: "expired"),
+                                tone: (:danger if summary.documents_expired_count.positive?) %>
+    <%= render "dashboard/kpi", key: "documents-expiring", label: "Expirent dans #{Document::EXPIRING_DAYS} jours",
+                                value: summary.documents_expiring_count, path: documents_path(validity: "expiring"),
+                                tone: (:warn if summary.documents_expiring_count.positive?) %>
+  </div>
+</section>
+
+<section class="card" data-section="departments">
+  <h2>Par département</h2>
+  <% overview = summary.departments_overview %>
+  <% if overview.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Département</th><th>Équipements</th><th>En panne</th><th>Incidents ouverts</th></tr>
+        </thead>
+        <tbody>
+          <% overview.each do |row| %>
+            <tr>
+              <td><%= row[:department].name %></td>
+              <td><%= link_to row[:equipments], equipments_path(department_id: row[:department].id) %></td>
+              <td><%= row[:out_of_order].positive? ? tag.span(row[:out_of_order], class: "badge badge-out-of-order") : row[:out_of_order] %></td>
+              <td><%= link_to row[:open_incidents], incidents_path(department_id: row[:department].id) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucun département.</p>
+  <% end %>
+</section>
+
+<section class="card" data-section="urgent">
+  <h2>Incidents critiques et majeurs ouverts</h2>
+  <% urgent = summary.urgent_incidents %>
+  <% if urgent.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>N°</th><th>Équipement</th><th>Gravité</th><th>Statut</th><th>Description</th><th>Détecté le</th></tr>
+        </thead>
+        <tbody>
+          <% urgent.each do |incident| %>
+            <tr>
+              <td><%= link_to "##{incident.id}", incident %></td>
+              <td><%= link_to incident.equipment.code, incident.equipment %><br><small><%= location_label(incident.equipment.location) %></small></td>
+              <td><%= severity_badge(incident.severity) %></td>
+              <td><%= incident_status_badge(incident.status) %></td>
+              <td class="wrap"><%= truncate(incident.description, length: 70) %></td>
+              <td><%= format_time(incident.detected_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucun incident critique ou majeur ouvert.</p>
+  <% end %>
+</section>

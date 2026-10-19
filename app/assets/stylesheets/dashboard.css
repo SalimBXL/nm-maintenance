@@ -1,0 +1,27 @@
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 0.75rem; margin: 0.5rem 0 1.25rem; }
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.8rem 1rem;
+  background: #fff;
+  border: 1px solid var(--bordure);
+  border-left: 5px solid var(--bordure);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+.kpi:hover { border-color: var(--bleu); }
+.kpi-value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.kpi-label { color: var(--gris); font-size: 0.9rem; }
+.kpi-ok { border-left-color: var(--ok); }
+.kpi-warn { border-left-color: #d89614; }
+.kpi-danger { border-left-color: var(--danger); }
+.kpi-danger .kpi-value { color: var(--danger); }
+
+section h2 small { font-weight: 400; color: var(--gris); font-size: 0.85rem; }
+.card h3 { margin: 0.75rem 0 0.25rem; font-size: 1rem; }
+.task-list { margin: 0 0 0.5rem; padding-left: 1.1rem; }
+.task-list li { margin-bottom: 0.3rem; }
+.task-text { color: var(--gris); }

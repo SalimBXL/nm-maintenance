@@ -26,7 +26,8 @@ class DocumentTest < ActiveSupport::TestCase
 
   def next_version(previous, **attributes)
     attach_pdf(Document.new({ supersedes: previous, title: previous.title,
-                              equipment_id: previous.equipment_id, equipment_model_id: previous.equipment_model_id }.merge(attributes)))
+                              equipment_id: previous.equipment_id,
+                              equipment_model_id: previous.equipment_model_id }.merge(attributes)))
   end
 
   # --- Création

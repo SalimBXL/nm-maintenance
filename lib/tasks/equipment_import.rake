@@ -49,7 +49,9 @@ namespace :equipment do
   task preview: :environment do
     import = EquipmentImportTask.load(ENV.fetch('FILE', nil))
     EquipmentImportTask.report(import)
-    puts(import.valid? ? "\nLe fichier est valide : vous pouvez lancer equipment:import." : "\nLe fichier n'est pas valide : corrigez-le puis relancez l'analyse.")
+    file_valid_str = "\nLe fichier est valide : vous pouvez lancer equipment:import."
+    file_not_valid_str = "\nLe fichier n'est pas valide : corrigez-le puis relancez l'analyse."
+    puts(import.valid? ? file_valid_str : file_not_valid_str)
   end
 
   desc 'Importe le parc depuis un fichier CSV ou .xlsx (tout ou rien) : FILE=chemin'

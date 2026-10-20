@@ -92,7 +92,7 @@ module Admin
     # --- Commun
 
     def set_record
-      @record = resource_class.find(params[:id])
+      @record = resource_class.find(params.expect(:id))
     end
 
     def load_collections
@@ -106,8 +106,8 @@ module Admin
     # Les champs « create_only » ne se choisissent qu'à la création : ils
     # entrent dans la composition des codes ou lient les enregistrements.
     def record_params
-      names = fields.reject { |field| field[:create_only] && action_name != 'create' }.map { |field| field[:name] }
-      params.require(resource_class.model_name.param_key).permit(*names)
+      names = fields.reject { |field| field[:create_only] && action_name != 'create' }.pluck(:name)
+      params.expect(resource_class.model_name.param_key => [*names])
     end
   end
 end

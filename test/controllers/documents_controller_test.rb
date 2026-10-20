@@ -183,7 +183,12 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Document.count } => 1 do
       post create_version_document_url(first), params: {
-        document: { title: first.title, version_label: '2.0', notes: 'Chapitre sécurité ajouté', file: upload('manuel-v2.pdf', '%PDF-1.4 v2') }
+        document: {
+          title: first.title,
+          version_label: '2.0',
+          notes: 'Chapitre sécurité ajouté',
+          file: upload('manuel-v2.pdf', '%PDF-1.4 v2')
+        }
       }
     end
 

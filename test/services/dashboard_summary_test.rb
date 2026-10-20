@@ -125,8 +125,16 @@ class DashboardSummaryTest < ActiveSupport::TestCase
 
     rows = summary.departments_overview.index_by { |row| row[:department] }
 
-    assert_equal({ equipments: 2, out_of_order: 0, open_incidents: 1 }, rows[@cameras].except(:department))
-    assert_equal({ equipments: 2, out_of_order: 1, open_incidents: 1 }, rows[@labs].except(:department)) # en panne + hors service (non archivé)
+    assert_equal({
+                   equipments: 2,
+                   out_of_order: 0,
+                   open_incidents: 1
+                 }, rows[@cameras].except(:department))
+    assert_equal({
+                   equipments: 2,
+                   out_of_order: 1,
+                   open_incidents: 1
+                 }, rows[@labs].except(:department)) # en panne + hors service (non archivé)
   end
 
   # --- Tâches de l'utilisateur

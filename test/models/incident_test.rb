@@ -69,7 +69,9 @@ class IncidentTest < ActiveSupport::TestCase
     incident = declare(severity: :minor)
 
     assert incident.transition('qualified', user: @manager, comment: 'Pris en compte',
-                                            attributes: { assigned_to_id: @technician.id, severity: 'critical', nature: 'safety' })
+                                            attributes: { assigned_to_id: @technician.id,
+                                                          severity: 'critical',
+                                                          nature: 'safety' })
 
     incident.reload
     assert incident.qualified?

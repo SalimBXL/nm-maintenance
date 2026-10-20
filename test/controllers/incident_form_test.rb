@@ -42,7 +42,12 @@ class IncidentFormTest < ActionDispatch::IntegrationTest
     sign_in_as @reporter
 
     post incidents_url, params: {
-      incident: { equipment_id: @equipment.id, description: 'Source égarée', severity: 'critical', nature: 'radiation_protection' }
+      incident: {
+        equipment_id: @equipment.id,
+        description: 'Source égarée',
+        severity: 'critical',
+        nature: 'radiation_protection'
+      }
     }
 
     incident = Incident.last

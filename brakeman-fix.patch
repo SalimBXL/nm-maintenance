@@ -1,0 +1,31 @@
+diff --git a/app/controllers/admin/users_controller.rb b/app/controllers/admin/users_controller.rb
+index 1724c1e..0f5d6b0 100644
+--- a/app/controllers/admin/users_controller.rb
++++ b/app/controllers/admin/users_controller.rb
+@@ -79,9 +79,11 @@ module Admin
+ 
+     # Un mot de passe vide à la modification signifie « ne pas changer ».
+     # params.fetch évite une erreur 400 quand seuls les départements sont envoyés.
++    # Le rôle est traité à part (voir submitted_role).
+     def user_params
+-      permitted = params.fetch(:user, {}).permit(:name, :email_address, :role, :valid_until,
++      permitted = params.fetch(:user, {}).permit(:name, :email_address, :valid_until,
+                                                  :password, :password_confirmation)
++      permitted[:role] = submitted_role if submitted_role
+       if permitted[:password].blank?
+         permitted.delete(:password)
+         permitted.delete(:password_confirmation)
+@@ -89,6 +91,13 @@ module Admin
+       permitted
+     end
+ 
++    # Le rôle n'est accepté que parmi les rôles connus. Seuls les administrateurs
++    # atteignent ces actions (UserPolicy#create? et #update?).
++    def submitted_role
++      role = params.dig(:user, :role).to_s
++      role if User.roles.key?(role)
++    end
++
+     def submitted_department_ids
+       Array(params.dig(:user, :department_ids)).compact_blank.map(&:to_i)
+     end

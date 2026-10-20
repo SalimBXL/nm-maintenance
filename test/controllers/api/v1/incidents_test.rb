@@ -69,7 +69,7 @@ class ApiIncidentsTest < ApiTestCase
     declare(description: 'Panne beta').update_columns(status: 'closed')
 
     get api_v1_incidents_url, headers: auth(@reporter)
-    assert_equal(['Panne alpha'], json['data'].map { |incident| incident['description'] })
+    assert_equal(['Panne alpha'], json['data'].pluck('description'))
 
     get api_v1_incidents_url(status: 'all'), headers: auth(@reporter)
     assert_equal 2, json['data'].size
@@ -81,10 +81,10 @@ class ApiIncidentsTest < ApiTestCase
     mine.update_columns(status: 'qualified', assigned_to_id: @technician.id)
 
     get api_v1_incidents_url(severity: 'critical'), headers: auth(@reporter)
-    assert_equal(['Panne alpha'], json['data'].map { |incident| incident['description'] })
+    assert_equal(['Panne alpha'], json['data'].pluck('description'))
 
     get api_v1_incidents_url(mine: '1'), headers: auth(@technician)
-    assert_equal(['Panne beta'], json['data'].map { |incident| incident['description'] })
+    assert_equal(['Panne beta'], json['data'].pluck('description'))
   end
 
   test "la fiche d'un incident indique les transitions permises à l'utilisateur" do

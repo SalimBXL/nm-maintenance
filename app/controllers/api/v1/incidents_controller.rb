@@ -15,7 +15,7 @@ module Api
 
       # GET /api/v1/incidents/:id
       def show
-        incident = Incident.includes(*INCLUDES).find(params[:id])
+        incident = Incident.includes(*INCLUDES).find(params.expect(:id))
         authorize incident
         render json: { data: ApiSerializers.incident(incident, user: Current.user) }
       end
@@ -36,7 +36,7 @@ module Api
       # POST /api/v1/incidents/:id/transition
       # { "to": "qualified", "comment": "...", "incident": { assigned_to_id, severity, ... } }
       def transition
-        incident = Incident.find(params[:id])
+        incident = Incident.find(params.expect(:id))
         authorize incident, :transition?
         target = params[:to].to_s
 
@@ -79,7 +79,7 @@ module Api
       end
 
       def declaration_params
-        params.require(:incident).permit(:equipment_id, :description, :severity, :nature, :detected_at)
+        params.expect(incident: %i[equipment_id description severity nature detected_at])
       end
 
       def transition_attributes

@@ -77,7 +77,7 @@ class EquipmentsController < ApplicationController
   private
 
   def set_equipment
-    @equipment = Equipment.includes(equipment_model: %i[manufacturer category], location: :department).find(params[:id])
+    @equipment = Equipment.includes(equipment_model: %i[manufacturer category], location: :department).find(params.expect(:id))
   end
 
   # Le modèle ne se choisit qu'à la création : le code interne en dépend.
@@ -85,7 +85,7 @@ class EquipmentsController < ApplicationController
     permitted = %i[location_id serial_number criticality acquired_on commissioned_on warranty_ends_on notes]
     permitted += %i[equipment_model_id] if action_name == 'create'
     permitted += %i[status decommissioned_on] if action_name == 'update'
-    params.require(:equipment).permit(*permitted)
+    params.expect(equipment: [*permitted])
   end
 
   def load_form_collections

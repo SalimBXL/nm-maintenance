@@ -11,7 +11,7 @@ class ApiEquipmentsTest < ApiTestCase
     get api_v1_equipments_url, headers: auth(@reporter)
 
     assert_response :success
-    assert_equal([@equipment.code, @lab_equipment.code], json['data'].map { |equipment| equipment['code'] })
+    assert_equal([@equipment.code, @lab_equipment.code], json['data'].pluck('code'))
     assert_equal({ 'page' => 1, 'per_page' => 25, 'total' => 2, 'total_pages' => 1 }, json['meta'])
   end
 
@@ -33,20 +33,20 @@ class ApiEquipmentsTest < ApiTestCase
     @lab_equipment.update!(status: :out_of_order)
 
     get api_v1_equipments_url(status: 'out_of_order'), headers: auth(@reporter)
-    assert_equal([@lab_equipment.code], json['data'].map { |equipment| equipment['code'] })
+    assert_equal([@lab_equipment.code], json['data'].pluck('code'))
 
     get api_v1_equipments_url(department_id: @cameras.id), headers: auth(@reporter)
-    assert_equal([@equipment.code], json['data'].map { |equipment| equipment['code'] })
+    assert_equal([@equipment.code], json['data'].pluck('code'))
 
     get api_v1_equipments_url(q: 'SN-100'), headers: auth(@reporter)
-    assert_equal([@equipment.code], json['data'].map { |equipment| equipment['code'] })
+    assert_equal([@equipment.code], json['data'].pluck('code'))
   end
 
   test 'les équipements archivés sont masqués par défaut' do
     @equipment.archive!
 
     get api_v1_equipments_url, headers: auth(@reporter)
-    assert_equal([@lab_equipment.code], json['data'].map { |equipment| equipment['code'] })
+    assert_equal([@lab_equipment.code], json['data'].pluck('code'))
 
     get api_v1_equipments_url(archived: '1'), headers: auth(@reporter)
     assert_equal 2, json['data'].size
@@ -55,7 +55,7 @@ class ApiEquipmentsTest < ApiTestCase
   test 'pagination et plafond de per_page' do
     get api_v1_equipments_url(per_page: 1, page: 2), headers: auth(@reporter)
 
-    assert_equal([@lab_equipment.code], json['data'].map { |equipment| equipment['code'] })
+    assert_equal([@lab_equipment.code], json['data'].pluck('code'))
     assert_equal 2, json['meta']['total_pages']
 
     get api_v1_equipments_url(per_page: 500), headers: auth(@reporter)

@@ -22,7 +22,7 @@ require 'csv'
 # Locaux et modèles inconnus : proposés à la création dans l'aperçu.
 # Départements, catégories et fabricants inconnus : erreur (ils se créent
 # dans l'administration, où un code doit être choisi).
-class EquipmentImport
+class EquipmentImport # rubocop:disable Metrics/ClassLength
   class Invalid < StandardError; end
 
   Error = Struct.new(:line, :message)

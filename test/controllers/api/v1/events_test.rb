@@ -24,7 +24,7 @@ class ApiEventsTest < ApiTestCase
     plan(title: 'Révision beta').update_columns(status: 'completed')
 
     get api_v1_events_url, headers: auth(@reporter)
-    assert_equal(['Révision alpha'], json['data'].map { |event| event['title'] })
+    assert_equal(['Révision alpha'], json['data'].pluck('title'))
 
     get api_v1_events_url(status: 'all'), headers: auth(@reporter)
     assert_equal 2, json['data'].size
@@ -35,10 +35,10 @@ class ApiEventsTest < ApiTestCase
     plan(title: 'Étalonnage gamma', event_type: :calibration, performed_by: @technician)
 
     get api_v1_events_url(event_type: 'calibration'), headers: auth(@reporter)
-    assert_equal(['Étalonnage gamma'], json['data'].map { |event| event['title'] })
+    assert_equal(['Étalonnage gamma'], json['data'].pluck('title'))
 
     get api_v1_events_url(mine: '1'), headers: auth(@technician)
-    assert_equal(['Étalonnage gamma'], json['data'].map { |event| event['title'] })
+    assert_equal(['Étalonnage gamma'], json['data'].pluck('title'))
   end
 
   test "la fiche d'une intervention" do

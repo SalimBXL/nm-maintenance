@@ -167,7 +167,7 @@ class DashboardSummaryTest < ActiveSupport::TestCase
 
     tasks = summary(@reporter).my_tasks
 
-    assert_equal(['Mes incidents ouverts'], tasks.map { |entry| entry[:title] })
+    assert_equal(['Mes incidents ouverts'], tasks.pluck(:title))
     assert_equal 1, tasks.first[:total]
   end
 end

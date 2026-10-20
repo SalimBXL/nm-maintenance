@@ -82,7 +82,7 @@ class IncidentsController < ApplicationController
   private
 
   def set_incident
-    @incident = Incident.includes(equipment: { location: :department }).find(params[:id])
+    @incident = Incident.includes(equipment: { location: :department }).find(params.expect(:id))
   end
 
   def load_show_data
@@ -133,13 +133,13 @@ class IncidentsController < ApplicationController
   end
 
   def declaration_params
-    params.require(:incident).permit(:equipment_id, :description, :severity, :nature, :detected_at)
+    params.expect(incident: %i[equipment_id description severity nature detected_at])
   end
 
   # Qualification et suivi : réservés aux administrateurs et responsables techniques.
   def qualification_params
-    params.require(:incident).permit(:description, :severity, :nature, :assigned_to_id,
-                                     :mandatory_declaration, :root_cause, :corrective_action)
+    params.expect(incident: %i[description severity nature assigned_to_id
+                               mandatory_declaration root_cause corrective_action])
   end
 
   # Champs modifiables pendant un changement de statut, selon le rôle.

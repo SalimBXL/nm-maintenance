@@ -102,7 +102,7 @@ class AdminUsersTest < ActionDispatch::IntegrationTest
     patch admin_user_url(@technician), params: { user: { department_ids: ['', @labs.id.to_s] } }
 
     assert_equal [@labs], @technician.reload.departments.to_a
-    assert PaperTrail::Version.where(item_type: 'DepartmentMembership', event: 'destroy').exists?
+    assert PaperTrail::Version.exists?(item_type: 'DepartmentMembership', event: 'destroy')
   end
 
   # --- Désactivation

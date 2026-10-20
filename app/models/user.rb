@@ -24,7 +24,7 @@ class User < ApplicationRecord
   # date de fin. « La date du jour » suit le fuseau horaire configuré
   # (config.time_zone), pas l'UTC.
   scope :active, -> { where('users.valid_until IS NULL OR users.valid_until >= ?', Time.zone.today) }
-  scope :inactive, -> { where('users.valid_until < ?', Time.zone.today) }
+  scope :inactive, -> { where(users: { valid_until: ...Time.zone.today }) }
 
   def active?
     valid_until.nil? || valid_until >= Time.zone.today

@@ -96,7 +96,7 @@ class DocumentsController < ApplicationController
   private
 
   def set_document
-    @document = Document.includes(:equipment, equipment_model: :manufacturer).find(params[:id])
+    @document = Document.includes(:equipment, equipment_model: :manufacturer).find(params.expect(:id))
   end
 
   def load_form_data
@@ -158,15 +158,15 @@ class DocumentsController < ApplicationController
   end
 
   def create_params
-    params.require(:document).permit(:title, :document_type, :equipment_id, :equipment_model_id,
-                                     :version_label, :valid_until, :notes, :file)
+    params.expect(document: %i[title document_type equipment_id equipment_model_id
+                               version_label valid_until notes file])
   end
 
   def version_params
-    params.require(:document).permit(:title, :version_label, :valid_until, :notes, :file)
+    params.expect(document: %i[title version_label valid_until notes file])
   end
 
   def update_params
-    params.require(:document).permit(:title, :document_type, :version_label, :valid_until, :notes)
+    params.expect(document: %i[title document_type version_label valid_until notes])
   end
 end

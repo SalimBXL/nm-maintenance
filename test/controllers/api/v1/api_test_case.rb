@@ -31,6 +31,6 @@ class ApiTestCase < ActionDispatch::IntegrationTest
   end
 
   def json
-    JSON.parse(response.body)
+    response.parsed_body
   end
 end

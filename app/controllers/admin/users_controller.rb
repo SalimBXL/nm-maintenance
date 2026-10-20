@@ -74,20 +74,20 @@ module Admin
     private
 
     def set_user
-      @user = User.find(params[:id])
+      @user = User.find(params.expect(:id))
     end
 
     # Un mot de passe vide à la modification signifie « ne pas changer ».
     def user_params
-      permitted = params.require(:user).permit(:name, :email_address, :role, :valid_until, :password,
-                                               :password_confirmation)
+      permitted = params.expect(user: %i[name email_address role valid_until password
+                                         password_confirmation])
       permitted.delete(:password) if permitted[:password].blank?
       permitted.delete(:password_confirmation) if permitted[:password].blank?
       permitted
     end
 
     def submitted_department_ids
-      Array(params.dig(:user, :department_ids)).reject(&:blank?).map(&:to_i)
+      Array(params.dig(:user, :department_ids)).compact_blank.map(&:to_i)
     end
 
     def load_form_data

@@ -24,7 +24,7 @@ class ApiAuthenticationTest < ApiTestCase
     assert_equal @reporter.id, data['id']
     assert_equal 'reporter', data['role']
     assert_equal @reporter.email_address, data['email']
-    assert_equal([@cameras.id], data['departments'].map { |department| department['id'] })
+    assert_equal([@cameras.id], data['departments'].pluck('id'))
   end
 
   test 'un jeton expiré est refusé' do

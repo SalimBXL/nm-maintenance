@@ -36,7 +36,7 @@ class ApiTokensController < ApplicationController
 
   # Révocation : le jeton n'est pas supprimé, il cesse simplement de fonctionner.
   def destroy
-    token = policy_scope(ApiToken).find(params[:id])
+    token = policy_scope(ApiToken).find(params.expect(:id))
     authorize token
     token.revoke!
     redirect_to api_tokens_path, notice: "Le jeton « #{token.name} » a été révoqué."

@@ -14,7 +14,7 @@ module Api
 
       # GET /api/v1/equipments/:id
       def show
-        equipment = Equipment.includes(*INCLUDES).find(params[:id])
+        equipment = Equipment.includes(*INCLUDES).find(params.expect(:id))
         authorize equipment
         render json: { data: ApiSerializers.equipment(equipment) }
       end

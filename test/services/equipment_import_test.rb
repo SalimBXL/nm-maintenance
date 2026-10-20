@@ -1,7 +1,7 @@
 require 'test_helper'
 
 class EquipmentImportTest < ActiveSupport::TestCase
-  HEADER = "categorie;fabricant;modele;departement;local;numero_serie\n"
+  HEADER = "categorie;fabricant;modele;departement;local;numero_serie\n".freeze
 
   setup do
     @department = Department.create!(name: 'Caméras', code: 'CAM')
@@ -13,7 +13,7 @@ class EquipmentImportTest < ActiveSupport::TestCase
   end
 
   def import(*lines)
-    EquipmentImport.from_csv(HEADER + lines.join("\n") + "\n")
+    EquipmentImport.from_csv("#{HEADER}#{lines.join("\n")}\n")
   end
 
   test 'un fichier valide crée les équipements avec des codes générés' do

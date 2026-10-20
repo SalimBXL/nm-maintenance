@@ -61,7 +61,7 @@ module Api
       # Pagination : ?page=1&per_page=25 (100 au maximum).
       def paginate(scope)
         per_page = params[:per_page].to_i.clamp(1, MAX_PER_PAGE)
-        per_page = DEFAULT_PER_PAGE unless params[:per_page].present?
+        per_page = DEFAULT_PER_PAGE if params[:per_page].blank?
         total = scope.count
         total_pages = [(total / per_page.to_f).ceil, 1].max
         page = params[:page].to_i.clamp(1, total_pages)

@@ -88,7 +88,7 @@ class EventsController < ApplicationController
   private
 
   def set_event
-    @event = Event.includes(equipment: { location: :department }).find(params[:id])
+    @event = Event.includes(equipment: { location: :department }).find(params.expect(:id))
   end
 
   def manager?
@@ -127,7 +127,7 @@ class EventsController < ApplicationController
                 else
                   %i[incident_id event_type title scheduled_on contractor]
                 end
-    params.require(:event).permit(*permitted)
+    params.expect(event: [*permitted])
   end
 
   def update_params
@@ -137,7 +137,7 @@ class EventsController < ApplicationController
                 else
                   %i[title scheduled_on started_at ended_at contractor report downtime_minutes cost_euros]
                 end
-    params.require(:event).permit(*permitted)
+    params.expect(event: [*permitted])
   end
 
   # Champs saisissables lors d'un changement de statut (début, fin, rapport…).

@@ -15,7 +15,7 @@ module Api
 
       # GET /api/v1/events/:id
       def show
-        event = Event.includes(*INCLUDES).find(params[:id])
+        event = Event.includes(*INCLUDES).find(params.expect(:id))
         authorize event
         render json: { data: ApiSerializers.event(event, user: Current.user) }
       end
@@ -56,7 +56,7 @@ module Api
       private
 
       def change_status(target)
-        event = Event.find(params[:id])
+        event = Event.find(params.expect(:id))
         authorize event, :transition?
 
         unless EventPolicy.new(Current.user, event).allowed_targets.include?(target)
@@ -98,7 +98,7 @@ module Api
                     else
                       %i[incident_id event_type title scheduled_on contractor]
                     end
-        params.require(:event).permit(*permitted)
+        params.expect(event: [*permitted])
       end
 
       def transition_attributes

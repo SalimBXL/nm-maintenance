@@ -14,7 +14,7 @@ module Api
       # Redéclaré après l'authentification pour que l'auteur soit connu.
       before_action :set_paper_trail_whodunnit
       after_action :verify_authorized
-      after_action :verify_policy_scoped, only: :index
+      after_action :verify_policy_scoped, if: -> { action_name == 'index' }
 
       rescue_from Pundit::NotAuthorizedError do
         render_error :forbidden, 'forbidden', "Vous n'avez pas le droit d'effectuer cette action."

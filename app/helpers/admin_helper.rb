@@ -17,11 +17,11 @@ module AdminHelper
   end
 
   # Valeur affichée (non modifiable) d'un champ « create_only » en édition.
-  def readonly_value(record, field)
+  def readonly_value(record, field, collections = {})
     value = record.public_send(field[:name])
     return value unless field[:type] == :select
 
-    (@collections || {}).fetch(field[:collection], []).find { |_label, id| id == value }&.first || value
+    (collections || {}).fetch(field[:collection], []).find { |_label, id| id == value }&.first || value
   end
 
   def role_label(role)

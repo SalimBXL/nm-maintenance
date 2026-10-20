@@ -1,0 +1,315 @@
+diff --git a/app/helpers/admin_helper.rb b/app/helpers/admin_helper.rb
+index 89d7751..9b1095e 100644
+--- a/app/helpers/admin_helper.rb
++++ b/app/helpers/admin_helper.rb
+@@ -17,11 +17,11 @@ module AdminHelper
+   end
+ 
+   # Valeur affichée (non modifiable) d'un champ « create_only » en édition.
+-  def readonly_value(record, field)
++  def readonly_value(record, field, collections = {})
+     value = record.public_send(field[:name])
+     return value unless field[:type] == :select
+ 
+-    (@collections || {}).fetch(field[:collection], []).find { |_label, id| id == value }&.first || value
++    (collections || {}).fetch(field[:collection], []).find { |_label, id| id == value }&.first || value
+   end
+ 
+   def role_label(role)
+diff --git a/app/models/api_token.rb b/app/models/api_token.rb
+index 8e426c7..a27e8dd 100644
+--- a/app/models/api_token.rb
++++ b/app/models/api_token.rb
+@@ -47,7 +47,8 @@ class ApiToken < ApplicationRecord
+   def touch_last_used!
+     return if last_used_at && last_used_at > 5.minutes.ago
+ 
+-    update_columns(last_used_at: Time.current)
++    # Écriture directe voulue : pas de validations, de rappels ni de trace d'audit à chaque appel.
++    update_columns(last_used_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+   end
+ 
+   private
+diff --git a/app/models/department.rb b/app/models/department.rb
+index 158bdc1..3f05006 100644
+--- a/app/models/department.rb
++++ b/app/models/department.rb
+@@ -6,9 +6,9 @@ class Department < ApplicationRecord
+   belongs_to :parent, class_name: 'Department', optional: true
+   belongs_to :manager, class_name: 'User', optional: true
+ 
+-  has_many :children, class_name: 'Department', foreign_key: :parent_id, inverse_of: :parent
+-  has_many :locations
+-  has_many :department_memberships
++  has_many :children, class_name: 'Department', foreign_key: :parent_id, inverse_of: :parent, dependent: :restrict_with_error
++  has_many :locations, dependent: :restrict_with_error
++  has_many :department_memberships, dependent: :restrict_with_error
+   has_many :users, through: :department_memberships
+ 
+   validates :name, presence: true, uniqueness: true
+diff --git a/app/models/document.rb b/app/models/document.rb
+index ba2521b..23a82a2 100644
+--- a/app/models/document.rb
++++ b/app/models/document.rb
+@@ -27,7 +27,8 @@ class Document < ApplicationRecord
+   belongs_to :equipment_model, optional: true
+   belongs_to :uploaded_by, class_name: 'User', optional: true
+   belongs_to :supersedes, class_name: 'Document', optional: true
+-  has_one :superseded_by, class_name: 'Document', foreign_key: :supersedes_id, inverse_of: :supersedes
++  has_one :superseded_by, class_name: 'Document', foreign_key: :supersedes_id, inverse_of: :supersedes,
++                          dependent: :restrict_with_error
+ 
+   has_one_attached :file
+ 
+diff --git a/app/models/equipment.rb b/app/models/equipment.rb
+index 54f6138..1ccc73a 100644
+--- a/app/models/equipment.rb
++++ b/app/models/equipment.rb
+@@ -13,7 +13,7 @@ class Equipment < ApplicationRecord
+   belongs_to :location
+ 
+   has_one :department, through: :location
+-  has_many :equipment_moves
++  has_many :equipment_moves, dependent: :restrict_with_error
+ 
+   delegate :category, :manufacturer, to: :equipment_model
+ 
+diff --git a/app/models/equipment_category.rb b/app/models/equipment_category.rb
+index 9357247..35fc3f5 100644
+--- a/app/models/equipment_category.rb
++++ b/app/models/equipment_category.rb
+@@ -3,7 +3,7 @@ class EquipmentCategory < ApplicationRecord
+ 
+   has_paper_trail
+ 
+-  has_many :equipment_models, foreign_key: :category_id, inverse_of: :category
++  has_many :equipment_models, foreign_key: :category_id, inverse_of: :category, dependent: :restrict_with_error
+ 
+   normalizes :code_prefix, with: ->(v) { v.strip.upcase }
+ 
+diff --git a/app/models/equipment_code_counter.rb b/app/models/equipment_code_counter.rb
+index f59c276..04c4993 100644
+--- a/app/models/equipment_code_counter.rb
++++ b/app/models/equipment_code_counter.rb
+@@ -8,8 +8,9 @@ class EquipmentCodeCounter < ApplicationRecord
+   def self.next_code(category:, manufacturer:)
+     counter = find_or_create_counter(category, manufacturer)
+     counter.with_lock do
+-      counter.increment!(:last_number)
+-      format('%s-%s-%02d', category.code_prefix, manufacturer.code, counter.last_number)
++      counter.update!(last_number: counter.last_number + 1)
++      format('%<prefix>s-%<manufacturer>s-%<number>02d',
++             prefix: category.code_prefix, manufacturer: manufacturer.code, number: counter.last_number)
+     end
+   end
+ 
+diff --git a/app/models/equipment_model.rb b/app/models/equipment_model.rb
+index d77581d..0e63bf6 100644
+--- a/app/models/equipment_model.rb
++++ b/app/models/equipment_model.rb
+@@ -9,7 +9,7 @@ class EquipmentModel < ApplicationRecord
+   belongs_to :manufacturer
+   belongs_to :category, class_name: 'EquipmentCategory'
+ 
+-  has_many :equipments
++  has_many :equipments, dependent: :restrict_with_error
+ 
+   validates :name, presence: true, uniqueness: { scope: :manufacturer_id }
+ 
+diff --git a/app/models/incident.rb b/app/models/incident.rb
+index a4a6ffb..b9885e1 100644
+--- a/app/models/incident.rb
++++ b/app/models/incident.rb
+@@ -13,7 +13,7 @@ class Incident < ApplicationRecord
+   belongs_to :equipment
+   belongs_to :reported_by, class_name: 'User'
+   belongs_to :assigned_to, class_name: 'User', optional: true
+-  has_many :status_changes, class_name: 'IncidentStatusChange', inverse_of: :incident
++  has_many :status_changes, class_name: 'IncidentStatusChange', inverse_of: :incident, dependent: :restrict_with_error
+ 
+   enum :severity, { critical: 'critical', major: 'major', minor: 'minor' },
+        default: :minor, prefix: true, validate: true
+diff --git a/app/models/location.rb b/app/models/location.rb
+index 23fd607..37eef8a 100644
+--- a/app/models/location.rb
++++ b/app/models/location.rb
+@@ -6,7 +6,7 @@ class Location < ApplicationRecord
+   belongs_to :department
+   belongs_to :referent, class_name: 'User', optional: true # référent du local (ex. SPECT ou PET)
+ 
+-  has_many :equipments
++  has_many :equipments, dependent: :restrict_with_error
+ 
+   validates :name, presence: true
+   validates :code, presence: true, uniqueness: { scope: :department_id }
+diff --git a/app/models/manufacturer.rb b/app/models/manufacturer.rb
+index b566673..a7fac0c 100644
+--- a/app/models/manufacturer.rb
++++ b/app/models/manufacturer.rb
+@@ -3,7 +3,7 @@ class Manufacturer < ApplicationRecord
+ 
+   has_paper_trail
+ 
+-  has_many :equipment_models
++  has_many :equipment_models, dependent: :restrict_with_error
+ 
+   normalizes :code, with: ->(v) { v.strip.upcase }
+ 
+diff --git a/app/services/equipment_import.rb b/app/services/equipment_import.rb
+index 3a26042..5cd347c 100644
+--- a/app/services/equipment_import.rb
++++ b/app/services/equipment_import.rb
+@@ -215,64 +215,98 @@ class EquipmentImport # rubocop:disable Metrics/ClassLength
+   end
+ 
+   def analyze_row(line, columns, cells)
+-    values = {}
+-    columns.each_with_index { |key, index| values[key] = clean(cells[index]) if key }
++    values = row_values(columns, cells)
+     return if values.values.all?(&:blank?)
+ 
+     before = errors.size
++    check_required(line, values)
++    return if errors.size > before
++
++    category, manufacturer, department = find_references(line, values)
++    return if errors.size > before
++
++    model, model_key = find_model(line, values, category, manufacturer)
++    location, location_key = find_location(department, values)
++    attributes = row_attributes(line, values, model, model_key)
++    return if errors.size > before
++
++    plan_model(model_key, manufacturer, category, values[:model]) unless model
++    plan_location(location_key, department, values[:location]) unless location
++    rows << PlannedRow.new(line: line, model: model, model_key: model_key,
++                           location: location, location_key: location_key, attributes: attributes)
++  end
+ 
++  def row_values(columns, cells)
++    columns.each_with_index.with_object({}) do |(key, index), values|
++      values[key] = clean(cells[index]) if key
++    end
++  end
++
++  def check_required(line, values)
+     REQUIRED.each do |key|
+       add_error(line, "#{HEADER_NAMES[key]} : valeur obligatoire") if values[key].blank?
+     end
+-    return if errors.size > before
++  end
+ 
+-    category = @categories[normalize(values[:category])]
+-    add_error(line, "catégorie inconnue « #{values[:category]} » (à créer dans l'administration)") unless category
+-    manufacturer = @manufacturers[normalize(values[:manufacturer])]
+-    unless manufacturer
+-      add_error(line,
+-                "fabricant inconnu « #{values[:manufacturer]} » (à créer dans l'administration)")
+-    end
+-    department = @departments[normalize(values[:department])]
+-    add_error(line, "département inconnu « #{values[:department]} » (à créer dans l'administration)") unless department
+-    return if errors.size > before
++  # Catégorie, fabricant et département doivent exister : sinon erreur.
++  def find_references(line, values)
++    [
++      find_reference(line, @categories, values[:category], 'catégorie inconnue'),
++      find_reference(line, @manufacturers, values[:manufacturer], 'fabricant inconnu'),
++      find_reference(line, @departments, values[:department], 'département inconnu')
++    ]
++  end
+ 
+-    model = @models.dig(manufacturer.id, normalize(values[:model]))
+-    model_key = [manufacturer.id, normalize(values[:model])]
+-    if model && model.category_id != category.id
+-      add_error(line, "le modèle « #{values[:model]} » existe déjà avec une autre catégorie (#{model.category.name})")
+-    elsif model.nil?
+-      planned = @planned_models[model_key]
+-      if planned && planned[:category] != category
+-        add_error(line, "le modèle « #{values[:model]} » apparaît avec deux catégories différentes dans le fichier")
+-      end
++  def find_reference(line, index, value, label)
++    found = index[normalize(value)]
++    add_error(line, "#{label} « #{value} » (à créer dans l'administration)") unless found
++    found
++  end
++
++  def find_model(line, values, category, manufacturer)
++    key = [manufacturer.id, normalize(values[:model])]
++    model = @models.dig(*key)
++    check_model_category(line, values[:model], model, key, category)
++    [model, key]
++  end
++
++  def check_model_category(line, name, model, key, category)
++    if model
++      return if model.category_id == category.id
++
++      add_error(line, "le modèle « #{name} » existe déjà avec une autre catégorie (#{model.category.name})")
++    else
++      planned = @planned_models[key]
++      return unless planned && planned[:category] != category
++
++      add_error(line, "le modèle « #{name} » apparaît avec deux catégories différentes dans le fichier")
+     end
++  end
+ 
+-    location = @locations.dig(department.id, normalize(values[:location]))
+-    location_key = [department.id, normalize(values[:location])]
++  def find_location(department, values)
++    key = [department.id, normalize(values[:location])]
++    [@locations.dig(*key), key]
++  end
+ 
++  def row_attributes(line, values, model, model_key)
+     serial = values[:serial_number].presence
+     check_serial(line, serial, model, model_key)
+-    criticality = parse_criticality(values[:criticality], line)
+-    acquired_on = parse_date(values[:acquired_on], line, 'date_acquisition')
+-    commissioned_on = parse_date(values[:commissioned_on], line, 'date_mise_en_service')
+-    warranty_ends_on = parse_date(values[:warranty_ends_on], line, 'fin_garantie')
+-    return if errors.size > before
++    {
++      serial_number: serial,
++      criticality: parse_criticality(values[:criticality], line),
++      acquired_on: parse_date(values[:acquired_on], line, 'date_acquisition'),
++      commissioned_on: parse_date(values[:commissioned_on], line, 'date_mise_en_service'),
++      warranty_ends_on: parse_date(values[:warranty_ends_on], line, 'fin_garantie'),
++      notes: values[:notes].presence
++    }
++  end
+ 
+-    @planned_models[model_key] ||= { manufacturer: manufacturer, category: category, name: values[:model] } unless model
+-    unless location
+-      @planned_locations[location_key] ||= { department: department, name: values[:location],
+-                                             code: values[:location] }
+-    end
++  def plan_model(key, manufacturer, category, name)
++    @planned_models[key] ||= { manufacturer: manufacturer, category: category, name: name }
++  end
+ 
+-    rows << PlannedRow.new(
+-      line: line, model: model, model_key: model_key, location: location, location_key: location_key,
+-      attributes: {
+-        serial_number: serial, criticality: criticality, acquired_on: acquired_on,
+-        commissioned_on: commissioned_on, warranty_ends_on: warranty_ends_on,
+-        notes: values[:notes].presence
+-      }
+-    )
++  def plan_location(key, department, name)
++    @planned_locations[key] ||= { department: department, name: name, code: name }
+   end
+ 
+   def check_serial(line, serial, model, model_key)
+diff --git a/app/views/admin/resources/_form.html.erb b/app/views/admin/resources/_form.html.erb
+index b3b6a39..cdc543f 100644
+--- a/app/views/admin/resources/_form.html.erb
++++ b/app/views/admin/resources/_form.html.erb
+@@ -13,7 +13,7 @@
+     <div class="field">
+       <% if field[:create_only] && @record.persisted? %>
+         <label><%= field[:label] %></label>
+-        <strong><%= readonly_value(@record, field) %></strong>
++        <strong><%= readonly_value(@record, field, @collections) %></strong>
+       <% else %>
+         <%= f.label field[:name], field[:label] %>
+         <% if field[:type] == :textarea %>

@@ -13,7 +13,7 @@ class Equipment < ApplicationRecord
   belongs_to :location
 
   has_one :department, through: :location
-  has_many :equipment_moves
+  has_many :equipment_moves, dependent: :restrict_with_error
 
   delegate :category, :manufacturer, to: :equipment_model
 

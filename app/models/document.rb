@@ -27,7 +27,8 @@ class Document < ApplicationRecord
   belongs_to :equipment_model, optional: true
   belongs_to :uploaded_by, class_name: 'User', optional: true
   belongs_to :supersedes, class_name: 'Document', optional: true
-  has_one :superseded_by, class_name: 'Document', foreign_key: :supersedes_id, inverse_of: :supersedes
+  has_one :superseded_by, class_name: 'Document', foreign_key: :supersedes_id, inverse_of: :supersedes,
+                          dependent: :restrict_with_error
 
   has_one_attached :file
 

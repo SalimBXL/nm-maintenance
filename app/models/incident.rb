@@ -13,7 +13,7 @@ class Incident < ApplicationRecord
   belongs_to :equipment
   belongs_to :reported_by, class_name: 'User'
   belongs_to :assigned_to, class_name: 'User', optional: true
-  has_many :status_changes, class_name: 'IncidentStatusChange', inverse_of: :incident
+  has_many :status_changes, class_name: 'IncidentStatusChange', inverse_of: :incident, dependent: :restrict_with_error
 
   enum :severity, { critical: 'critical', major: 'major', minor: 'minor' },
        default: :minor, prefix: true, validate: true

@@ -8,8 +8,9 @@ class EquipmentCodeCounter < ApplicationRecord
   def self.next_code(category:, manufacturer:)
     counter = find_or_create_counter(category, manufacturer)
     counter.with_lock do
-      counter.increment!(:last_number)
-      format('%s-%s-%02d', category.code_prefix, manufacturer.code, counter.last_number)
+      counter.update!(last_number: counter.last_number + 1)
+      format('%<prefix>s-%<manufacturer>s-%<number>02d',
+             prefix: category.code_prefix, manufacturer: manufacturer.code, number: counter.last_number)
     end
   end
 

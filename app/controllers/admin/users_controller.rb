@@ -78,11 +78,14 @@ module Admin
     end
 
     # Un mot de passe vide à la modification signifie « ne pas changer ».
+    # params.fetch évite une erreur 400 quand seuls les départements sont envoyés.
     def user_params
-      permitted = params.expect(user: %i[name email_address role valid_until password
-                                         password_confirmation])
-      permitted.delete(:password) if permitted[:password].blank?
-      permitted.delete(:password_confirmation) if permitted[:password].blank?
+      permitted = params.fetch(:user, {}).permit(:name, :email_address, :role, :valid_until,
+                                                 :password, :password_confirmation)
+      if permitted[:password].blank?
+        permitted.delete(:password)
+        permitted.delete(:password_confirmation)
+      end
       permitted
     end
 

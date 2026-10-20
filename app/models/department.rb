@@ -6,9 +6,9 @@ class Department < ApplicationRecord
   belongs_to :parent, class_name: 'Department', optional: true
   belongs_to :manager, class_name: 'User', optional: true
 
-  has_many :children, class_name: 'Department', foreign_key: :parent_id, inverse_of: :parent
-  has_many :locations
-  has_many :department_memberships
+  has_many :children, class_name: 'Department', foreign_key: :parent_id, inverse_of: :parent, dependent: :restrict_with_error
+  has_many :locations, dependent: :restrict_with_error
+  has_many :department_memberships, dependent: :restrict_with_error
   has_many :users, through: :department_memberships
 
   validates :name, presence: true, uniqueness: true

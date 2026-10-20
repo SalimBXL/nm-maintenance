@@ -9,7 +9,7 @@ class EquipmentModel < ApplicationRecord
   belongs_to :manufacturer
   belongs_to :category, class_name: 'EquipmentCategory'
 
-  has_many :equipments
+  has_many :equipments, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { scope: :manufacturer_id }
 

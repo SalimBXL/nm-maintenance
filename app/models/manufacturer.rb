@@ -3,7 +3,7 @@ class Manufacturer < ApplicationRecord
 
   has_paper_trail
 
-  has_many :equipment_models
+  has_many :equipment_models, dependent: :restrict_with_error
 
   normalizes :code, with: ->(v) { v.strip.upcase }
 

@@ -3,7 +3,7 @@ class EquipmentCategory < ApplicationRecord
 
   has_paper_trail
 
-  has_many :equipment_models, foreign_key: :category_id, inverse_of: :category
+  has_many :equipment_models, foreign_key: :category_id, inverse_of: :category, dependent: :restrict_with_error
 
   normalizes :code_prefix, with: ->(v) { v.strip.upcase }
 

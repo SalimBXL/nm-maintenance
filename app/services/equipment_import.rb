@@ -215,64 +215,98 @@ class EquipmentImport # rubocop:disable Metrics/ClassLength
   end
 
   def analyze_row(line, columns, cells)
-    values = {}
-    columns.each_with_index { |key, index| values[key] = clean(cells[index]) if key }
+    values = row_values(columns, cells)
     return if values.values.all?(&:blank?)
 
     before = errors.size
+    check_required(line, values)
+    return if errors.size > before
 
+    category, manufacturer, department = find_references(line, values)
+    return if errors.size > before
+
+    model, model_key = find_model(line, values, category, manufacturer)
+    location, location_key = find_location(department, values)
+    attributes = row_attributes(line, values, model, model_key)
+    return if errors.size > before
+
+    plan_model(model_key, manufacturer, category, values[:model]) unless model
+    plan_location(location_key, department, values[:location]) unless location
+    rows << PlannedRow.new(line: line, model: model, model_key: model_key,
+                           location: location, location_key: location_key, attributes: attributes)
+  end
+
+  def row_values(columns, cells)
+    columns.each_with_index.with_object({}) do |(key, index), values|
+      values[key] = clean(cells[index]) if key
+    end
+  end
+
+  def check_required(line, values)
     REQUIRED.each do |key|
       add_error(line, "#{HEADER_NAMES[key]} : valeur obligatoire") if values[key].blank?
     end
-    return if errors.size > before
+  end
 
-    category = @categories[normalize(values[:category])]
-    add_error(line, "catégorie inconnue « #{values[:category]} » (à créer dans l'administration)") unless category
-    manufacturer = @manufacturers[normalize(values[:manufacturer])]
-    unless manufacturer
-      add_error(line,
-                "fabricant inconnu « #{values[:manufacturer]} » (à créer dans l'administration)")
+  # Catégorie, fabricant et département doivent exister : sinon erreur.
+  def find_references(line, values)
+    [
+      find_reference(line, @categories, values[:category], 'catégorie inconnue'),
+      find_reference(line, @manufacturers, values[:manufacturer], 'fabricant inconnu'),
+      find_reference(line, @departments, values[:department], 'département inconnu')
+    ]
+  end
+
+  def find_reference(line, index, value, label)
+    found = index[normalize(value)]
+    add_error(line, "#{label} « #{value} » (à créer dans l'administration)") unless found
+    found
+  end
+
+  def find_model(line, values, category, manufacturer)
+    key = [manufacturer.id, normalize(values[:model])]
+    model = @models.dig(*key)
+    check_model_category(line, values[:model], model, key, category)
+    [model, key]
+  end
+
+  def check_model_category(line, name, model, key, category)
+    if model
+      return if model.category_id == category.id
+
+      add_error(line, "le modèle « #{name} » existe déjà avec une autre catégorie (#{model.category.name})")
+    else
+      planned = @planned_models[key]
+      return unless planned && planned[:category] != category
+
+      add_error(line, "le modèle « #{name} » apparaît avec deux catégories différentes dans le fichier")
     end
-    department = @departments[normalize(values[:department])]
-    add_error(line, "département inconnu « #{values[:department]} » (à créer dans l'administration)") unless department
-    return if errors.size > before
+  end
 
-    model = @models.dig(manufacturer.id, normalize(values[:model]))
-    model_key = [manufacturer.id, normalize(values[:model])]
-    if model && model.category_id != category.id
-      add_error(line, "le modèle « #{values[:model]} » existe déjà avec une autre catégorie (#{model.category.name})")
-    elsif model.nil?
-      planned = @planned_models[model_key]
-      if planned && planned[:category] != category
-        add_error(line, "le modèle « #{values[:model]} » apparaît avec deux catégories différentes dans le fichier")
-      end
-    end
+  def find_location(department, values)
+    key = [department.id, normalize(values[:location])]
+    [@locations.dig(*key), key]
+  end
 
-    location = @locations.dig(department.id, normalize(values[:location]))
-    location_key = [department.id, normalize(values[:location])]
-
+  def row_attributes(line, values, model, model_key)
     serial = values[:serial_number].presence
     check_serial(line, serial, model, model_key)
-    criticality = parse_criticality(values[:criticality], line)
-    acquired_on = parse_date(values[:acquired_on], line, 'date_acquisition')
-    commissioned_on = parse_date(values[:commissioned_on], line, 'date_mise_en_service')
-    warranty_ends_on = parse_date(values[:warranty_ends_on], line, 'fin_garantie')
-    return if errors.size > before
+    {
+      serial_number: serial,
+      criticality: parse_criticality(values[:criticality], line),
+      acquired_on: parse_date(values[:acquired_on], line, 'date_acquisition'),
+      commissioned_on: parse_date(values[:commissioned_on], line, 'date_mise_en_service'),
+      warranty_ends_on: parse_date(values[:warranty_ends_on], line, 'fin_garantie'),
+      notes: values[:notes].presence
+    }
+  end
 
-    @planned_models[model_key] ||= { manufacturer: manufacturer, category: category, name: values[:model] } unless model
-    unless location
-      @planned_locations[location_key] ||= { department: department, name: values[:location],
-                                             code: values[:location] }
-    end
+  def plan_model(key, manufacturer, category, name)
+    @planned_models[key] ||= { manufacturer: manufacturer, category: category, name: name }
+  end
 
-    rows << PlannedRow.new(
-      line: line, model: model, model_key: model_key, location: location, location_key: location_key,
-      attributes: {
-        serial_number: serial, criticality: criticality, acquired_on: acquired_on,
-        commissioned_on: commissioned_on, warranty_ends_on: warranty_ends_on,
-        notes: values[:notes].presence
-      }
-    )
+  def plan_location(key, department, name)
+    @planned_locations[key] ||= { department: department, name: name, code: name }
   end
 
   def check_serial(line, serial, model, model_key)

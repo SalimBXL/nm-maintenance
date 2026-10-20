@@ -47,7 +47,8 @@ class ApiToken < ApplicationRecord
   def touch_last_used!
     return if last_used_at && last_used_at > 5.minutes.ago
 
-    update_columns(last_used_at: Time.current)
+    # Écriture directe voulue : pas de validations, de rappels ni de trace d'audit à chaque appel.
+    update_columns(last_used_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
   end
 
   private

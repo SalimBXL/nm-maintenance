@@ -13,7 +13,7 @@
     <div class="field">
       <% if field[:create_only] && @record.persisted? %>
         <label><%= field[:label] %></label>
-        <strong><%= readonly_value(@record, field) %></strong>
+        <strong><%= readonly_value(@record, field, @collections) %></strong>
       <% else %>
         <%= f.label field[:name], field[:label] %>
         <% if field[:type] == :textarea %>

@@ -1,2 +1,2 @@
-rubocop -a -x -f github
+rubocop -a -f github
 rails test

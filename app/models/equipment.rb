@@ -42,7 +42,23 @@ class Equipment < ApplicationRecord
   before_create :assign_code
   after_update :record_move, if: :saved_change_to_location_id?
 
+  # Aligne le statut sur les interventions : « en maintenance » tant qu'une
+  # intervention est en cours ; au retour, « en service », ou « en panne » si
+  # un incident critique qualifié ou en cours n'est pas encore résolu.
+  # Un équipement en panne ou hors service n'est jamais modifié au démarrage.
+  def sync_status_with_events!
+    if Event.exists?(equipment_id: id, status: 'in_progress')
+      update!(status: :under_maintenance) if in_service?
+    elsif under_maintenance?
+      update!(status: critical_incident_unresolved? ? :out_of_order : :in_service)
+    end
+  end
+
   private
+
+  def critical_incident_unresolved?
+    Incident.exists?(equipment_id: id, severity: 'critical', status: %w[qualified in_progress])
+  end
 
   def assign_code
     self.code ||= EquipmentCodeCounter.next_code(category: category, manufacturer: manufacturer)

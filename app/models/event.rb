@@ -92,6 +92,7 @@ class Event < ApplicationRecord
 
       raise ActiveRecord::Rollback unless save
 
+      equipment.sync_status_with_events!
       success = true
     end
 

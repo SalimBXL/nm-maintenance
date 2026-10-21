@@ -134,4 +134,59 @@ class EventTest < ActiveSupport::TestCase
 
     assert_empty event.reload.next_statuses
   end
+
+  # --- Statut de l'équipement
+
+  test "démarrer une intervention met l'équipement en maintenance" do
+    event = plan
+
+    assert event.transition('in_progress', user: @technician)
+
+    assert @equipment.reload.under_maintenance?
+  end
+
+  test "terminer ou annuler l'intervention remet l'équipement en service" do
+    event = plan
+    event.transition('in_progress', user: @technician)
+    event.transition('completed', user: @technician, attributes: { report: 'Fait' })
+    assert @equipment.reload.in_service?
+
+    other = plan(title: 'Autre')
+    other.transition('in_progress', user: @manager)
+    other.transition('cancelled', user: @manager)
+    assert @equipment.reload.in_service?
+  end
+
+  test "l'équipement reste en maintenance tant qu'une autre intervention est en cours" do
+    first = plan
+    second = plan(title: 'Seconde')
+    first.transition('in_progress', user: @technician)
+    second.transition('in_progress', user: @technician)
+
+    first.transition('completed', user: @technician, attributes: { report: 'Fait' })
+    assert @equipment.reload.under_maintenance?
+
+    second.transition('completed', user: @technician, attributes: { report: 'Fait' })
+    assert @equipment.reload.in_service?
+  end
+
+  test "un équipement en panne n'est pas modifié au démarrage" do
+    @equipment.update!(status: :out_of_order)
+    event = plan
+
+    event.transition('in_progress', user: @technician)
+
+    assert @equipment.reload.out_of_order?
+  end
+
+  test "un incident critique non résolu remet l'équipement en panne à la fin" do
+    event = plan
+    event.transition('in_progress', user: @technician)
+    incident = Incident.create!(equipment: @equipment, reported_by: @reporter, description: 'HS', severity: :critical)
+    incident.update_columns(status: 'qualified')
+
+    event.transition('completed', user: @technician, attributes: { report: 'Fait' })
+
+    assert @equipment.reload.out_of_order?
+  end
 end

@@ -2,94 +2,87 @@
 
 Application de gestion de maintenance d'équipements de **médecine nucléaire** : parc d'équipements, incidents, interventions, documents techniques et journal d'audit, avec une interface web et une API JSON versionnée.
 
-> **État du projet : jalon 1 (MVP) en cours de réalisation.** Les étapes 1 à 5 sont installées et testées, la gestion des utilisateurs est livrée (en attente de validation). Les incidents, interventions, documents et l'API v1 restent à faire. Voir [Avancement](#avancement).
+> **État : jalon 1 (MVP) bien avancé.** Le parc, les incidents, les interventions, les documents, le tableau de bord, les jetons d'API et le premier lot de l'API v1 sont en place. Restent notamment la consultation du journal d'audit dans l'interface, les sauvegardes et la mise en service. Voir [Avancement](#avancement).
 
 ## Sommaire
 
-- [Objectif](#objectif)
 - [Fonctionnalités](#fonctionnalités)
 - [Pile technique](#pile-technique)
-- [Installation](#installation)
-- [Import initial du parc](#import-initial-du-parc)
-- [Règles de conception](#règles-de-conception)
+- [Démarrage](#démarrage)
+- [Import du parc](#import-du-parc)
 - [Code interne des équipements](#code-interne-des-équipements)
 - [Rôles et droits](#rôles-et-droits)
-- [Modèle de données](#modèle-de-données)
-- [API v1 (prévue)](#api-v1-prévue)
+- [Incidents et interventions](#incidents-et-interventions)
+- [Documents techniques](#documents-techniques)
+- [API v1](#api-v1)
+- [Principes de conception](#principes-de-conception)
+- [Qualité et intégration continue](#qualité-et-intégration-continue)
+- [Déploiement](#déploiement)
 - [Avancement](#avancement)
 - [Feuille de route](#feuille-de-route)
 - [Points ouverts](#points-ouverts)
 
-## Objectif
-
-Fournir au service un outil utilisable au quotidien pour :
-
-- renseigner et consulter le parc d'équipements, par département et par local ;
-- déclarer et suivre les incidents, avec un workflow de statuts et son historique ;
-- tracer les interventions préventives et correctives ;
-- retrouver les documents techniques (manuels, certificats, etc.), versionnés ;
-- garder une trace complète de toute modification (journal d'audit).
-
-Contexte : un seul service, composé de plusieurs départements (laboratoires, caméras, salles d'injection, etc.). Aucune donnée existante à reprendre : le parc est saisi par import.
-
 ## Fonctionnalités
 
-### Disponibles
+Contexte : un seul service, composé de plusieurs départements (laboratoires, caméras, salles d'injection, etc.), sans donnée existante à reprendre.
 
-- Départements, locaux, catégories d'équipements, fabricants et modèles (zone d'administration).
-- Équipements : liste (recherche, filtres par département, catégorie et statut, archivés, pagination), fiche, création, modification, archivage, historique des déplacements.
-- Code interne généré automatiquement (voir [ci-dessous](#code-interne-des-équipements)).
-- Import du parc par fichier Excel ou CSV, avec aperçu et contrôle ligne par ligne.
-- Utilisateurs, quatre rôles et droits par rôle ([Pundit](https://github.com/varvet/pundit)).
-- Comptes à date de fin de validité, avec garde-fou sur le dernier administrateur actif.
-- Journal d'audit sur les données métier ([PaperTrail](https://github.com/paper-trail-gem/paper_trail)).
-
-### À venir (jalon 1)
-
-- Incidents et workflow de statuts : **déclaré → qualifié → en cours → résolu → clôturé**.
-- Interventions (préventives, correctives, contrôle qualité, étalonnage, mise à jour logicielle).
-- Documents techniques versionnés, rattachés à un équipement ou à un modèle.
-- Droits limités par département.
-- Consultation du journal d'audit dans l'interface.
-- API JSON `/api/v1` avec jetons personnels et spécification OpenAPI.
-- Sauvegardes planifiées et mise en place sur le serveur.
-
-### Hors du jalon 1
-
-Client terminal (TUI) en Rust, application mobile, plans de maintenance récurrents, alertes et notifications par e-mail, contrôles qualité, radioprotection, contrats, pièces détachées, tableaux de bord (MTBF, MTTR, disponibilité), intégration à l'annuaire d'entreprise.
+| Domaine | Contenu |
+| --- | --- |
+| Tableau de bord | Page d'accueil : état du parc, incidents ouverts par gravité, incidents urgents, interventions en cours, documents proches de l'expiration, tâches de l'utilisateur, calendrier mensuel des interventions |
+| Parc | Départements, locaux, catégories, fabricants, modèles, équipements ; recherche, filtres (département, catégorie, statut), archivage, historique des déplacements |
+| Incidents | Déclaration rapide (utilisable sur téléphone), workflow de statuts avec historique, liste filtrée, fiche |
+| Interventions | Préventives, correctives, contrôles qualité, étalonnages, mises à jour logicielles ; liées à un équipement et éventuellement à un incident |
+| Documents | Documents techniques versionnés, rattachés à un équipement ou à un modèle, téléchargeables |
+| Utilisateurs | Quatre rôles, comptes à date de fin de validité, réinitialisation de mot de passe |
+| API | `/api/v1` en JSON, jetons personnels, spécification OpenAPI |
+| Audit | Toute création, modification ou archivage de données métier est journalisé (auteur, date, valeurs avant et après) |
 
 ## Pile technique
 
 | Besoin | Solution |
 | --- | --- |
-| Serveur, interface web, API | Ruby on Rails |
-| Base de données | SQLite, sur le disque local du serveur, ouverte uniquement par Rails (mode WAL, clés étrangères activées) ; bascule possible vers PostgreSQL |
+| Langage et framework | Ruby 3.4.2, Rails 8.1 |
+| Interface web | Rails, Hotwire (Turbo, Stimulus), import maps, Propshaft |
+| Base de données | SQLite, dans `storage/`, ouverte uniquement par Rails ; migrations compatibles PostgreSQL |
 | Audit | `paper_trail` |
 | Droits | `pundit` |
-| Documents (à venir) | Active Storage, fichiers sur disque, références en base |
-| Spécification d'API (à venir) | OpenAPI, par exemple via `rswag` |
+| Import Excel | `roo` |
+| Fichiers | Active Storage (disque local) |
+| Tâches et cache | Solid Queue, Solid Cache, Solid Cable |
+| Déploiement | Docker, Kamal |
 
 Architecture : un serveur central porte toute la logique métier, l'audit et l'authentification. Les clients (web, puis terminal et mobile) ne parlent jamais directement à la base de données.
 
-## Installation
+## Démarrage
 
 ### Prérequis
 
-- Ruby et Bundler (version indiquée dans `.ruby-version` / `Gemfile`)
+- Ruby 3.4.2 (voir `.ruby-version`) et Bundler
 - SQLite 3
+- libvips (variantes d'images Active Storage)
 
-### Démarrage en local
+### Installation
 
 ```bash
 git clone https://github.com/SalimBXL/nm-maintenance.git
 cd nm-maintenance
-
 bundle install
-bin/rails db:setup      # crée la base, applique les migrations et les données initiales
+```
+
+Pour créer le premier administrateur, fournissez `ADMIN_EMAIL` et `ADMIN_PASSWORD` avant d'initialiser la base. En développement, placez-les dans un fichier `.env` (chargé par `dotenv`) ; `ADMIN_NAME` est facultatif. Aucun mot de passe par défaut n'existe dans le code.
+
+```bash
+# .env (ne pas versionner)
+ADMIN_EMAIL=admin@exemple.org
+ADMIN_PASSWORD=un-mot-de-passe-d-au-moins-12-caracteres
+```
+
+```bash
+bin/rails db:setup     # crée la base, applique les migrations et les données de référence
 bin/rails server
 ```
 
-L'application est alors disponible sur <http://localhost:3000>.
+L'application est disponible sur <http://localhost:3000>. Les données de référence (`db/seeds.rb`) sont rejouables sans doublon : catégories (PET-CT, SPECT, SPECT-CT, Activimètre, Distributeur d'activité, Unidose) et fabricants (GE, Veenstra Instruments, Comecer, Trasis).
 
 ### Tests
 
@@ -97,117 +90,170 @@ L'application est alors disponible sur <http://localhost:3000>.
 bin/rails test
 ```
 
-### Déploiement
+## Import du parc
 
-- Placer le fichier SQLite sur le **disque local** du serveur, jamais sur un partage réseau (verrouillage non fiable, mode WAL inutilisable, risque de corruption).
-- Sauvegarder avec la commande de sauvegarde de SQLite (`.backup`), pas par simple copie du fichier en cours d'utilisation, et conserver une copie hors du serveur.
-- Vérifier avec l'informatique l'hébergement, l'accès réseau et les sauvegardes.
+L'import se fait aujourd'hui par **tâches Rake**, à partir d'un fichier CSV ou `.xlsx` (première feuille uniquement) :
 
-## Import initial du parc
+```bash
+bin/rails equipment:preview FILE=parc.xlsx   # analyse seulement, ne crée rien
+bin/rails equipment:import  FILE=parc.xlsx   # importe (tout ou rien)
 
-Fichier CSV ou Excel (première feuille uniquement) ; un modèle de fichier est fourni.
+# En production
+RAILS_ENV=production bin/rails equipment:import FILE=parc.xlsx
+```
+
+L'auteur inscrit dans le journal d'audit est « import du parc », modifiable avec la variable `WHODUNNIT`.
 
 | Colonnes obligatoires | Colonnes facultatives |
 | --- | --- |
 | catégorie, fabricant, modèle, département, local | numéro de série, criticité, date d'acquisition, date de mise en service, fin de garantie, notes |
 
-- Il n'y a **pas de colonne « code »** : le code interne est toujours généré.
-- Les valeurs sont reconnues sans tenir compte de la casse ni des accents, par nom ou par code.
-- Les **locaux et modèles inconnus** sont proposés à la création dans l'aperçu, puis créés à la validation.
-- Les **départements, catégories et fabricants inconnus** provoquent une erreur : ils doivent d'abord être créés dans l'administration.
-- **Tout ou rien** : si une seule ligne est invalide, rien n'est importé, et les erreurs sont indiquées ligne par ligne.
-
-## Règles de conception
-
-- **Pas de suppression physique** : colonne `archived_at` sur les tables principales. Un référentiel ne s'archive pas tant que des éléments actifs en dépendent.
-- Clés étrangères et index dès le départ ; contraintes d'unicité (code interne, n° de série par modèle).
-- Montants en centimes (entiers), dates en UTC.
-- Statuts en énumérations stockées en texte, partagées entre l'API et les clients.
-- Aucune fonction propre à SQLite, pour garder un passage à PostgreSQL transparent.
-- Noms de tables et de colonnes en anglais (convention Rails) ; libellés affichés en français via l'internationalisation.
-- Certains champs sont figés après création car ils entrent dans les codes ou lient les enregistrements : préfixe de type d'une catégorie, code court d'un fabricant, fabricant et catégorie d'un modèle, département d'un local, modèle d'un équipement.
+- Pas de colonne « code » : le code interne est toujours généré.
+- Valeurs reconnues sans tenir compte de la casse ni des accents, par nom ou par code.
+- Locaux et modèles inconnus : listés par l'analyse, puis créés à l'import.
+- Départements, catégories et fabricants inconnus : erreur, à créer d'abord dans l'administration.
+- Tout ou rien : si une ligne est invalide, rien n'est importé ; les erreurs sont indiquées ligne par ligne.
 
 ## Code interne des équipements
 
-Format **`TYPE-FABRICANT-NN`**, par exemple `PETCT-GE-01` ou `SPECT-SIEM-02`.
+Format **`TYPE-FABRICANT-NN`**, par exemple `PETCT-GE-01` ou `SPECTCT-GE-01`.
 
-- Le préfixe de type vient de la catégorie (8 caractères au plus, sans tiret : PET-CT devient `PETCT`), le code court du fabricant d'une liste de référence gérée dans l'application.
-- Compteur séquentiel **par couple (catégorie, fabricant)** : le premier SPECT Siemens est `SPECT-SIEM-01`, même si `SPECT-GE-01` existe.
+- Préfixe de type issu de la catégorie (8 caractères au plus, sans tiret), code court issu du fabricant.
+- Compteur séquentiel **par couple (catégorie, fabricant)** : le premier SPECT Siemens serait `SPECT-SIEM-01`, même si `SPECT-GE-01` existe.
 - Généré à la création, jamais modifié, jamais réutilisé, même après archivage ou mise hors service.
-- Il ne contient ni département ni local, car un équipement peut être déplacé. Le numéro de série du fabricant reste un champ séparé.
-
-| Catégorie | Préfixe | Fabricant | Code |
-| --- | --- | --- | --- |
-| PET-CT | PETCT | GE | GE |
-| SPECT | SPECT | Veenstra Instruments (gamme VIK) | VIK |
-| SPECT-CT | SPECTCT | Comecer | COME |
-| Activimètre | ACT | Trasis | TRAS |
-| Distributeur d'activité | DIST | | |
-| Unidose | UNID | | |
-
-Ces listes sont configurables dans l'application.
+- Il ne contient ni département ni local, car un équipement peut être déplacé. Le numéro de série reste un champ séparé.
 
 ## Rôles et droits
 
-| Rôle | Peut faire |
+| Rôle | Rôle dans l'application |
 | --- | --- |
-| Administrateur | Configurer, gérer les utilisateurs, tout consulter et modifier |
-| Responsable technique | Gérer le parc, qualifier et clôturer les incidents, planifier et valider les interventions |
-| Technicien | Intervenir, saisir les rapports, mettre à jour les incidents qui lui sont assignés |
-| Déclarant | Déclarer un incident, suivre son statut, consulter les fiches équipements |
-
-Droits actuellement en place :
+| Administrateur | Configure, gère les utilisateurs, tout consulter et modifier |
+| Responsable technique | Gère le parc, qualifie et clôture les incidents, planifie et valide les interventions, consulte l'audit |
+| Technicien | Intervient, met à jour les incidents qui lui sont assignés, saisit les rapports |
+| Déclarant | Déclare des incidents, suit leur statut, consulte les fiches |
 
 | Ressource | Administrateur | Responsable technique | Technicien | Déclarant |
 | --- | --- | --- | --- | --- |
-| Équipements, locaux, catégories, modèles, fabricants | lire, créer, modifier, archiver | lire, créer, modifier, archiver | lire | lire |
-| Départements | lire, créer, modifier, archiver | lire | lire | lire |
+| Équipements, locaux, catégories, modèles, fabricants | tout sauf suppression | tout sauf suppression | lecture | lecture |
+| Départements | tout sauf suppression | lecture | lecture | lecture |
 | Utilisateurs | tout | sa propre fiche | sa propre fiche | sa propre fiche |
-| Journal d'audit | lire | lire | – | – |
+| Incidents | déclarer, modifier, tout le workflow | déclarer, modifier, tout le workflow | déclarer dans ses départements ; passer ses incidents assignés en cours ou résolu | déclarer dans ses départements |
+| Interventions | créer, modifier, tout le workflow | créer, modifier, tout le workflow | créer pour ses incidents assignés ; démarrer, terminer les siennes | lecture |
+| Documents | créer, modifier, versionner, archiver | créer, modifier, versionner, archiver | lecture, téléchargement | lecture, téléchargement |
+| Jetons d'API | les siens | les siens | les siens | les siens |
+| Journal d'audit | lecture | lecture | – | – |
 
-Personne ne peut supprimer physiquement. La limitation par département (technicien, déclarant) sera appliquée avec les incidents et les interventions.
+Personne ne peut supprimer physiquement. Un utilisateur non connecté ou non actif n'a aucun droit.
 
-**Comptes** : un utilisateur est non actif si sa date de fin de validité est antérieure à la date du jour (fuseau horaire du service) ; le compte reste actif le jour même. Aucun champ « actif » n'est stocké. Un utilisateur non actif ne peut plus se connecter, son historique est conservé. Il est impossible de retirer le rôle ou de désactiver le dernier administrateur actif.
+**Comptes** : un utilisateur est non actif si sa date de fin de validité est antérieure à la date du jour (fuseau horaire du service) ; le compte reste actif le jour même. Aucun champ « actif » n'est stocké. Un utilisateur non actif ne peut plus se connecter et ses jetons d'API sont refusés ; son historique est conservé. Le dernier administrateur actif ne peut être ni désactivé ni rétrogradé.
 
-## Modèle de données
+## Incidents et interventions
 
-**Réalisé** : `users`, `departments`, `department_memberships`, `locations`, `equipment_categories`, `manufacturers`, `equipment_models`, `equipments`, `equipment_moves`, `equipment_code_counters`, `versions` (audit).
+### Incidents
 
-**À réaliser** : `incidents`, `incident_status_changes`, `events` (interventions), `documents`.
+Statuts : **déclaré → qualifié → en cours → résolu → clôturé**. Un incident résolu peut être rouvert (remis en cours) avec un commentaire obligatoire.
 
-### Gravité des incidents (décidé)
+- Chaque changement de statut est enregistré (qui, quand, commentaire).
+- La qualification exige une personne assignée, active et autre qu'un déclarant.
+- La clôture exige une cause racine.
+- Les incidents de nature sécurité ou radioprotection sont signalés comme pouvant imposer une déclaration obligatoire.
+- Un incident critique qualifié passe l'équipement « en panne ».
+- On ne peut pas déclarer d'incident sur un équipement archivé.
 
-| Niveau | Définition | Prise en charge visée |
+| Gravité | Définition | Prise en charge visée |
 | --- | --- | --- |
 | Critique | Équipement indisponible sans solution de repli, ou risque pour un patient ou le personnel | Quelques heures |
-| Majeure | Fonctionnement dégradé ou solution de contournement, examens perturbés | Dans la journée |
+| Majeure | Fonctionnement dégradé ou contournement possible, examens perturbés | Dans la journée |
 | Mineure | Gêne sans impact sur l'activité ni sur la sécurité | Quelques jours ouvrés |
 
-Le déclarant propose une gravité, le responsable technique la confirme à la qualification. La dimension réglementaire est portée par le champ *nature* (technique, sécurité, radioprotection), pas par la gravité.
+Le déclarant propose une gravité, le responsable technique la confirme à la qualification. La dimension réglementaire est portée par le champ *nature* (technique, sécurité, radioprotection).
 
-## API v1 (prévue)
+### Interventions
 
-- Préfixe `/api/v1`, format JSON, authentification par jeton personnel (`Authorization: Bearer ...`) généré depuis l'interface web.
-- Pagination, filtres, format d'erreur unique, droits identiques à ceux de l'interface web.
-- Spécification OpenAPI maintenue à partir des tests.
+Statuts : **planifiée → en cours → terminée**, ou annulée. Une intervention peut être terminée directement.
 
-Premier lot à stabiliser (il servira au futur client terminal) : `GET /me`, équipements (liste et fiche), création d'incident, interventions (création et clôture).
+- Une intervention terminée exige une date de fin et un rapport.
+- Le coût est saisi en euros et stocké en centimes ; la durée d'indisponibilité est en minutes.
+- Le statut de l'équipement suit les interventions : « en maintenance » tant qu'une intervention est en cours, puis retour « en service », ou « en panne » si un incident critique qualifié ou en cours n'est pas résolu. Un équipement en panne ou hors service n'est jamais modifié au démarrage.
+
+## Documents techniques
+
+- Rattachés **soit** à un équipement, **soit** à un modèle d'équipement, jamais aux deux.
+- Types : manuel, certificat, déclaration de conformité, rapport, procédure, autre.
+- Formats acceptés : PDF, PNG, JPEG, texte, ZIP, Word et Excel ; 25 Mo au maximum.
+- Une nouvelle version référence la précédente ; l'historique reste consultable.
+- Une date de validité est enregistrée ; les documents expirant dans les 60 jours sont signalés.
+
+## API v1
+
+- Préfixe `/api/v1`, JSON.
+- Authentification par **jeton personnel** (`Authorization: Bearer mt_...`), créé depuis l'interface web (menu « Jetons API »). Le jeton expire (365 jours par défaut), peut être révoqué et n'est jamais stocké en clair (seule son empreinte l'est).
+- Droits identiques à ceux de l'interface web.
+- Pagination `page` / `per_page` (25 par défaut, 100 au maximum), format d'erreur unique `{ "error": { "code", "message", "details" } }`, dates ISO 8601.
+- Spécification OpenAPI : [`openapi/v1.yaml`](openapi/v1.yaml), servie sans authentification sur `/api/v1/openapi.yaml`.
+
+| Ressource | Endpoints |
+| --- | --- |
+| Utilisateur courant | `GET /me` |
+| Équipements | `GET /equipments`, `GET /equipments/:id` |
+| Incidents | `GET /incidents`, `GET /incidents/:id`, `POST /incidents`, `POST /incidents/:id/transition` |
+| Interventions | `GET /events`, `GET /events/:id`, `POST /events`, `POST /events/:id/start`, `POST /events/:id/complete`, `POST /events/:id/cancel` |
+
+Exemple :
+
+```bash
+curl -H "Authorization: Bearer mt_xxxxxxxx" http://localhost:3000/api/v1/me
+```
+
+Ce premier lot, destiné au futur client terminal, est stabilisé en priorité. Départements, locaux, catégories, modèles, documents, import et audit viendront ensuite.
+
+## Principes de conception
+
+- **Pas de suppression physique** : colonne `archived_at` sur les tables principales. Un référentiel ne s'archive pas tant que des éléments actifs en dépendent.
+- Clés étrangères et index dès le départ ; contraintes d'unicité (code interne, numéro de série par modèle).
+- Montants en centimes (entiers), dates en UTC.
+- Statuts en énumérations stockées en texte, lisibles dans la base et portables vers PostgreSQL.
+- Aucune fonction propre à SQLite.
+- Noms de tables et de colonnes en anglais (convention Rails) ; libellés affichés en français via l'internationalisation.
+- Certains champs sont figés après création car ils entrent dans les codes ou lient les enregistrements : préfixe d'une catégorie, code court d'un fabricant, fabricant et catégorie d'un modèle, département d'un local, modèle d'un équipement.
+
+## Qualité et intégration continue
+
+Le workflow GitHub Actions (`.github/workflows/ci.yml`) exécute à chaque pull request et à chaque push sur `main` :
+
+- Brakeman (analyse de sécurité du code) et bundler-audit (vulnérabilités des gems) ;
+- `importmap audit` (dépendances JavaScript) ;
+- RuboCop (style) ;
+- la suite de tests (`bin/rails db:test:prepare test`).
+
+En local, `check.sh` lance RuboCop (avec correction automatique) puis les tests.
+
+## Déploiement
+
+Une image Docker de production (`Dockerfile`) et une configuration Kamal (`config/deploy.yml`) sont fournies ; les valeurs par défaut (adresse du serveur, registre) sont des exemples à remplacer.
+
+- En production, les bases SQLite (principale, cache, file d'attente, cable) et les fichiers Active Storage vivent dans `storage/`, à monter sur un **volume persistant du disque local** du serveur, jamais sur un partage réseau (verrouillage non fiable, risque de corruption).
+- Fournir `RAILS_MASTER_KEY` et, pour la création du premier administrateur, `ADMIN_EMAIL` et `ADMIN_PASSWORD` dans les variables d'environnement du service.
+- Sauvegarder la base avec la commande de sauvegarde de SQLite (`.backup`), pas par simple copie du fichier en cours d'utilisation, et conserver une copie hors du serveur. Tester la restauration.
+- Vérifier avec l'informatique l'hébergement, l'accès réseau et les sauvegardes.
 
 ## Avancement
 
 | Étape | Contenu | État |
 | --- | --- | --- |
-| 1 | Squelette Rails, authentification, audit, modèle de données du parc, utilisateurs et rôles, code interne | Installée, tests validés |
-| 2 | Droits par rôle (Pundit) | Installée, tests validés |
-| 3 | Import du parc par Excel ou CSV | Installée, parc importé |
-| 4 | Interface web du parc | Installée, tests validés |
-| 5 | Administration des référentiels | Installée, tests validés |
-| 6 | Gestion des utilisateurs | Livrée, en attente de validation |
-| 7 | Incidents et workflow de statuts | À faire |
-| 8 | Interventions | À faire |
-| 9 | Documents techniques | À faire |
-| 10 | API v1, jetons personnels, OpenAPI | À faire |
-| 11 | Consultation de l'audit, sauvegardes, mise en place sur le serveur, essais utilisateurs | À faire |
+| 1 | Squelette Rails, authentification, audit, modèle de données du parc, code interne | Fait |
+| 2 | Droits par rôle (Pundit) | Fait |
+| 3 | Import du parc (CSV, Excel) | Fait (tâches Rake) |
+| 4 | Interface web du parc | Fait |
+| 5 | Administration des référentiels | Fait |
+| 6 | Gestion des utilisateurs | Fait |
+| 7 | Incidents et workflow de statuts | Fait |
+| 8 | Interventions | Fait |
+| 9 | Documents techniques | Fait |
+| 10 | API v1, jetons personnels, OpenAPI | Premier lot fait (utilisateur, équipements, incidents, interventions) |
+| 11 | Consultation de l'audit, sauvegardes, mise en service, essais utilisateurs | À faire |
+
+Reste à faire pour le jalon 1 : interface de consultation du journal d'audit (la politique d'accès existe, pas encore de page), sauvegardes planifiées et restauration testée, mise en place sur le serveur, essais avec quelques utilisateurs, et le reste de l'API (documents, référentiels, import, audit).
 
 ### Critères d'acceptation du jalon 1
 
@@ -221,22 +267,17 @@ Premier lot à stabiliser (il servira au futur client terminal) : `GET /me`, éq
 
 ## Feuille de route
 
-- **Jalon 1 (MVP)** : serveur Rails, interface web, API v1, parc, incidents, interventions, documents, audit.
-- **Jalon 2** : client terminal (TUI) en Rust pour les postes sans navigateur, planification du préventif, alertes et notifications, tableaux de bord.
-- **Jalon 3** : contrôles qualité, radioprotection, contrats, pièces détachées, PWA puis éventuellement application Flutter, intégrations (annuaire d'entreprise).
+- **Jalon 1 (MVP)** : en cours de finalisation (voir ci-dessus).
+- **Jalon 2** : client terminal (TUI) en Rust pour les postes sans navigateur, planification du préventif, alertes et notifications par e-mail, indicateurs (MTBF, MTTR, disponibilité).
+- **Jalon 3** : contrôles qualité, radioprotection, contrats, pièces détachées, PWA puis éventuellement application Flutter, intégration à l'annuaire d'entreprise.
 
 ## Points ouverts
 
 - Serveur interne et contraintes de l'informatique (hébergement, accès réseau, sauvegardes).
 - Réglementation applicable aux incidents de radioprotection et à leur déclaration, selon le pays.
 - Niveaux de criticité des équipements : faible, moyenne, haute (hypothèse à confirmer).
-- Limitation des droits par département : lecture ou seulement actions, à préciser avec les incidents.
-- Politique de mot de passe et envoi d'e-mails de réinitialisation, à prévoir avant la mise en service.
+- Politique de mot de passe (longueur minimale) à fixer avant la mise en service ; l'envoi d'e-mails de réinitialisation doit être configuré.
 - Mobile : PWA, Flutter, ou rien dans un premier temps.
-
-## Documentation
-
-Les décisions et spécifications détaillées se trouvent dans les documents de travail du projet : « Décisions et recommandations », « Spécification du jalon 1 (MVP) » et « Jalon 1 : synthèse et état d'avancement ».
 
 ## Licence
 

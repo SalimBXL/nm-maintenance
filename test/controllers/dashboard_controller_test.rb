@@ -87,4 +87,27 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-section='departments']", text: /Caméras/
   end
+
+  test 'le calendrier affiche les interventions du mois, sans les annulées' do
+    day = Time.zone.today.beginning_of_month + 9
+    Event.create!(equipment: @equipment, title: 'Contrôle annuel', event_type: :quality_control, scheduled_on: day)
+    Event.create!(equipment: @broken, title: 'Annulée', scheduled_on: day, status: :cancelled)
+    sign_in_as @reporter
+
+    get dashboard_url
+
+    assert_select "[data-section='calendar'] [data-date='#{day.iso8601}'] .calendar-event", count: 1
+    assert_select "[data-section='calendar'] .calendar-event", text: @equipment.code
+  end
+
+  test 'le calendrier navigue entre les mois et ignore un mois invalide' do
+    sign_in_as @reporter
+
+    get dashboard_url(mois: '2026-12')
+    assert_select "[data-section='calendar'] strong", text: /décembre 2026/i
+
+    get dashboard_url(mois: 'nimportequoi')
+    assert_response :success
+    assert_select "[data-section='calendar'] strong", text: /#{Time.zone.today.year}/
+  end
 end

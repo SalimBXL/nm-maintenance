@@ -1,0 +1,46 @@
+<% day_names = I18n.t("date.abbr_day_names").rotate(1) %>
+<section class="card calendar" id="calendrier" data-section="calendar">
+  <div class="calendar-head">
+    <h2>Calendrier des interventions</h2>
+    <nav class="calendar-nav" aria-label="Navigation du calendrier">
+      <%= link_to "‹", dashboard_path(mois: calendar.previous_month.strftime("%Y-%m"), anchor: "calendrier"),
+                  class: "button secondary", rel: "prev", "aria-label": "Mois précédent" %>
+      <strong><%= l(calendar.month, format: "%B %Y") %></strong>
+      <%= link_to "›", dashboard_path(mois: calendar.next_month.strftime("%Y-%m"), anchor: "calendrier"),
+                  class: "button secondary", rel: "next", "aria-label": "Mois suivant" %>
+      <% unless calendar.current_month? %>
+        <%= link_to "Aujourd'hui", dashboard_path(anchor: "calendrier") %>
+      <% end %>
+    </nav>
+  </div>
+
+  <div class="calendar-grid" role="grid">
+    <% day_names.each do |name| %>
+      <div class="calendar-dayname" role="columnheader"><%= name %></div>
+    <% end %>
+
+    <% calendar.weeks.flatten.each do |day| %>
+      <% events = calendar.events_on(day) %>
+      <% classes = ["calendar-day"] %>
+      <% classes << "calendar-outside" unless calendar.in_month?(day) %>
+      <% classes << "calendar-today" if day == calendar.today %>
+      <div class="<%= classes.join(" ") %>" role="gridcell" data-date="<%= day.iso8601 %>">
+        <span class="calendar-num"><%= day.day %></span>
+        <% events.first(InterventionCalendar::MAX_PER_DAY).each do |event| %>
+          <%= link_to event.equipment.code, event,
+                      class: "calendar-event badge-event-#{event.status.dasherize}#{' calendar-overdue' if calendar.overdue?(event)}",
+                      title: "#{event_type_label(event.event_type)} · #{event.title} (#{event_status_label(event.status)})" %>
+        <% end %>
+        <% extra = events.size - InterventionCalendar::MAX_PER_DAY %>
+        <% if extra.positive? %>
+          <%= link_to "+#{extra}", events_path(status: "planned"), class: "calendar-more" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <p class="hint">
+    <%= calendar.total %> intervention<%= "s" if calendar.total > 1 %> ce mois-ci
+    · en rouge : planifiée et en retard.
+  </p>
+</section>

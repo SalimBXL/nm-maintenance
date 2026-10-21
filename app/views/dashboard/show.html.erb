@@ -8,18 +8,6 @@
   <p class="hint"><%= l(Time.zone.today, format: :long) %></p>
 </div>
 
-<% tasks = summary.my_tasks.select { |task| task[:total].positive? } %>
-<section class="card" data-section="tasks">
-  <h2>À traiter</h2>
-  <% if tasks.any? %>
-    <% tasks.each do |task| %>
-      <%= render "dashboard/task", task: task %>
-    <% end %>
-  <% else %>
-    <p class="empty">Rien à traiter pour le moment.</p>
-  <% end %>
-</section>
-
 <section>
   <h2>Parc : <%= summary.equipment_total %> équipement<%= "s" if summary.equipment_total > 1 %>
     <% if summary.in_service_percent %><small>(<%= summary.in_service_percent %> % en service)</small><% end %></h2>
@@ -33,6 +21,48 @@
     <%= render "dashboard/kpi", key: "equipment-decommissioned", label: "Hors service", value: equipment["decommissioned"],
                                 path: equipments_path(status: "decommissioned") %>
   </div>
+</section>
+
+<%= render "dashboard/calendar", calendar: @calendar %>
+
+<% tasks = summary.my_tasks.select { |task| task[:total].positive? } %>
+<section class="card" data-section="tasks">
+  <h2>À traiter</h2>
+  <% if tasks.any? %>
+    <% tasks.each do |task| %>
+      <%= render "dashboard/task", task: task %>
+    <% end %>
+  <% else %>
+    <p class="empty">Rien à traiter pour le moment.</p>
+  <% end %>
+</section>
+
+<section class="card" data-section="urgent">
+  <h2>Incidents critiques et majeurs ouverts</h2>
+  <% urgent = summary.urgent_incidents %>
+  <% if urgent.any? %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>N°</th><th>Équipement</th><th>Gravité</th><th>Statut</th><th>Description</th><th>Détecté le</th></tr>
+        </thead>
+        <tbody>
+          <% urgent.each do |incident| %>
+            <tr>
+              <td><%= link_to "##{incident.id}", incident %></td>
+              <td><%= link_to incident.equipment.code, incident.equipment %><br><small><%= location_label(incident.equipment.location) %></small></td>
+              <td><%= severity_badge(incident.severity) %></td>
+              <td><%= incident_status_badge(incident.status) %></td>
+              <td class="wrap"><%= truncate(incident.description, length: 70) %></td>
+              <td><%= format_time(incident.detected_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="empty">Aucun incident critique ou majeur ouvert.</p>
+  <% end %>
 </section>
 
 <section>
@@ -63,18 +93,6 @@
   </div>
 </section>
 
-<section>
-  <h2>Documents techniques</h2>
-  <div class="kpis">
-    <%= render "dashboard/kpi", key: "documents-expired", label: "Expirés", value: summary.documents_expired_count,
-                                path: documents_path(validity: "expired"),
-                                tone: (:danger if summary.documents_expired_count.positive?) %>
-    <%= render "dashboard/kpi", key: "documents-expiring", label: "Expirent dans #{Document::EXPIRING_DAYS} jours",
-                                value: summary.documents_expiring_count, path: documents_path(validity: "expiring"),
-                                tone: (:warn if summary.documents_expiring_count.positive?) %>
-  </div>
-</section>
-
 <section class="card" data-section="departments">
   <h2>Par département</h2>
   <% overview = summary.departments_overview %>
@@ -101,30 +119,14 @@
   <% end %>
 </section>
 
-<section class="card" data-section="urgent">
-  <h2>Incidents critiques et majeurs ouverts</h2>
-  <% urgent = summary.urgent_incidents %>
-  <% if urgent.any? %>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>N°</th><th>Équipement</th><th>Gravité</th><th>Statut</th><th>Description</th><th>Détecté le</th></tr>
-        </thead>
-        <tbody>
-          <% urgent.each do |incident| %>
-            <tr>
-              <td><%= link_to "##{incident.id}", incident %></td>
-              <td><%= link_to incident.equipment.code, incident.equipment %><br><small><%= location_label(incident.equipment.location) %></small></td>
-              <td><%= severity_badge(incident.severity) %></td>
-              <td><%= incident_status_badge(incident.status) %></td>
-              <td class="wrap"><%= truncate(incident.description, length: 70) %></td>
-              <td><%= format_time(incident.detected_at) %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
-    <p class="empty">Aucun incident critique ou majeur ouvert.</p>
-  <% end %>
+<section>
+  <h2>Documents techniques</h2>
+  <div class="kpis">
+    <%= render "dashboard/kpi", key: "documents-expired", label: "Expirés", value: summary.documents_expired_count,
+                                path: documents_path(validity: "expired"),
+                                tone: (:danger if summary.documents_expired_count.positive?) %>
+    <%= render "dashboard/kpi", key: "documents-expiring", label: "Expirent dans #{Document::EXPIRING_DAYS} jours",
+                                value: summary.documents_expiring_count, path: documents_path(validity: "expiring"),
+                                tone: (:warn if summary.documents_expiring_count.positive?) %>
+  </div>
 </section>

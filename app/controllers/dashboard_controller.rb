@@ -4,5 +4,6 @@ class DashboardController < ApplicationController
   def show
     authorize :dashboard, :show?
     @summary = DashboardSummary.new(Current.user)
+    @calendar = InterventionCalendar.new(InterventionCalendar.month_from(params[:mois]))
   end
 end

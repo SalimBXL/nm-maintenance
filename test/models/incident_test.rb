@@ -154,4 +154,48 @@ class IncidentTest < ActiveSupport::TestCase
 
     assert @equipment.reload.in_service?
   end
+
+  # --- Retour à la normale à la résolution
+
+  def resolve(incident)
+    assert incident.transition('in_progress', user: @technician)
+    assert incident.transition('resolved', user: @technician)
+    incident
+  end
+
+  test "résoudre le seul incident critique remet l'équipement en service" do
+    resolve(qualify(declare(severity: :critical)))
+
+    assert @equipment.reload.in_service?
+  end
+
+  test "un autre incident critique ouvert garde l'équipement en panne" do
+    qualify(declare(severity: :critical, description: 'Autre panne'))
+    resolve(qualify(declare(severity: :critical)))
+
+    assert @equipment.reload.out_of_order?
+  end
+
+  test "une intervention en cours place l'équipement en maintenance" do
+    incident = qualify(declare(severity: :critical))
+    Event.create!(equipment: @equipment, incident: incident, title: 'Réparation', event_type: :corrective,
+                  status: :in_progress, started_at: Time.current)
+    resolve(incident)
+
+    assert @equipment.reload.under_maintenance?
+  end
+
+  test "résoudre un incident non critique ne touche pas un équipement en panne" do
+    @equipment.update!(status: :out_of_order)
+    resolve(qualify(declare(severity: :major)))
+
+    assert @equipment.reload.out_of_order?
+  end
+
+  test "rouvrir un incident critique remet l'équipement en panne" do
+    incident = resolve(qualify(declare(severity: :critical)))
+    assert incident.transition('in_progress', user: @manager, comment: 'La panne est revenue')
+
+    assert @equipment.reload.out_of_order?
+  end
 end

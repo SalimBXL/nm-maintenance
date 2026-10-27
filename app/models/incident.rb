@@ -48,7 +48,8 @@ class Incident < ApplicationRecord
 
   # Fait passer l'incident au statut suivant : enregistre le changement dans
   # l'historique, met à jour les dates et, pour un incident critique qualifié,
-  # passe l'équipement « en panne ». Retourne true ou false (erreurs dans errors).
+  # passe l'équipement « en panne » ; à la résolution, le statut de l'équipement
+  # est recalculé (voir Equipment#restore_status_after_incident!). Retourne true ou false (erreurs dans errors).
   def transition(to, user:, comment: nil, attributes: {})
     to = to.to_s
     from = status
@@ -75,6 +76,8 @@ class Incident < ApplicationRecord
 
       status_changes.create!(from_status: from, to_status: to, user: user, comment: comment.presence)
       mark_equipment_out_of_order if to == 'qualified'
+      equipment.restore_status_after_incident!(self) if to == 'resolved'
+      mark_equipment_out_of_order if from == 'resolved' && to == 'in_progress'
       success = true
     end
 

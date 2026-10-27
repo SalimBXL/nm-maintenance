@@ -54,10 +54,24 @@ class Equipment < ApplicationRecord
     end
   end
 
+  # À la résolution d'un incident critique, recalcule le statut sans le forcer :
+  # un équipement « en panne » repasse « en maintenance » si une intervention est
+  # en cours, « en service » s'il ne reste aucun autre incident critique ouvert,
+  # et ne change pas sinon. Les autres statuts (hors service, en maintenance
+  # posé à la main) ne sont jamais touchés.
+  def restore_status_after_incident!(incident)
+    return unless incident.severity_critical? && out_of_order?
+    return if critical_incident_unresolved?(except: incident)
+
+    update!(status: Event.exists?(equipment_id: id, status: 'in_progress') ? :under_maintenance : :in_service)
+  end
+
   private
 
-  def critical_incident_unresolved?
-    Incident.exists?(equipment_id: id, severity: 'critical', status: %w[qualified in_progress])
+  def critical_incident_unresolved?(except: nil)
+    scope = Incident.where(equipment_id: id, severity: 'critical', status: %w[qualified in_progress])
+    scope = scope.where.not(id: except.id) if except
+    scope.exists?
   end
 
   def assign_code

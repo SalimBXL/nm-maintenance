@@ -50,20 +50,17 @@ class Incident < ApplicationRecord
   # l'historique, met à jour les dates et, pour un incident critique qualifié,
   # passe l'équipement « en panne » ; à la résolution, le statut de l'équipement
   # est recalculé (voir Equipment#restore_status_after_incident!). Retourne true ou false (erreurs dans errors).
-  def transition(to, user:, comment: nil, attributes: {})
+  def transition(to, user:, comment: nil, attributes: {}) # rubocop:disable Metrics/MethodLength
     to = to.to_s
     from = status
-
     unless next_statuses.include?(to)
       errors.add(:base, "Transition impossible de « #{from} » vers « #{to} ».")
       return false
     end
-
     if from == 'resolved' && to == 'in_progress' && comment.blank?
       errors.add(:base, 'Un commentaire est obligatoire pour rouvrir un incident.')
       return false
     end
-
     success = false
     transaction do
       assign_attributes(attributes)
@@ -71,7 +68,6 @@ class Incident < ApplicationRecord
       self.resolved_at = Time.current if to == 'resolved'
       self.resolved_at = nil if from == 'resolved' && to == 'in_progress'
       self.closed_at = Time.current if to == 'closed'
-
       raise ActiveRecord::Rollback unless save
 
       status_changes.create!(from_status: from, to_status: to, user: user, comment: comment.presence)
@@ -80,7 +76,6 @@ class Incident < ApplicationRecord
       mark_equipment_out_of_order if from == 'resolved' && to == 'in_progress'
       success = true
     end
-
     self.status = from unless success
     success
   end

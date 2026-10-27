@@ -185,7 +185,7 @@ class IncidentTest < ActiveSupport::TestCase
     assert @equipment.reload.under_maintenance?
   end
 
-  test "résoudre un incident non critique ne touche pas un équipement en panne" do
+  test 'résoudre un incident non critique ne touche pas un équipement en panne' do
     @equipment.update!(status: :out_of_order)
     resolve(qualify(declare(severity: :major)))
 

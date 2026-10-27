@@ -23,8 +23,6 @@
   </div>
 </section>
 
-<%= render "dashboard/calendar", calendar: @calendar %>
-
 <% tasks = summary.my_tasks.select { |task| task[:total].positive? } %>
 <section class="card" data-section="tasks">
   <h2>À traiter</h2>
@@ -64,6 +62,8 @@
     <p class="empty">Aucun incident critique ou majeur ouvert.</p>
   <% end %>
 </section>
+
+<%= render "dashboard/calendar", calendar: @calendar %>
 
 <section>
   <h2>Incidents ouverts : <%= summary.open_incidents_total %></h2>

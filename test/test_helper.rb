@@ -1,5 +1,6 @@
 ENV['RAILS_ENV'] ||= 'test'
 
+# Section to suppress warnings from rack-test gem about frozen string literals
 Warning.singleton_class.prepend(Module.new do
   def warn(msg, **kw) # rubocop:disable Naming/MethodParameterName
     return if msg.include?('rack-test') && msg.include?('literal string will be frozen')

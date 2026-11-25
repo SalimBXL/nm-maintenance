@@ -21,6 +21,7 @@ Application de gestion de maintenance d'équipements de **médecine nucléaire**
 - [Avancement](#avancement)
 - [Feuille de route](#feuille-de-route)
 - [Points ouverts](#points-ouverts)
+- [Historique des modifications](#historique-des-modifications)
 
 ## Fonctionnalités
 
@@ -41,7 +42,7 @@ Contexte : un seul service, composé de plusieurs départements (laboratoires, c
 
 | Besoin | Solution |
 | --- | --- |
-| Langage et framework | Ruby 3.4.2, Rails 8.1 |
+| Langage et framework | Ruby 3.4 (3.4.2 dans l'image Docker), Rails 8.1 |
 | Interface web | Rails, Hotwire (Turbo, Stimulus), import maps, Propshaft |
 | Base de données | SQLite, dans `storage/`, ouverte uniquement par Rails ; migrations compatibles PostgreSQL |
 | Audit | `paper_trail` |
@@ -57,7 +58,7 @@ Architecture : un serveur central porte toute la logique métier, l'audit et l'a
 
 ### Prérequis
 
-- Ruby 3.4.2 (voir `.ruby-version`) et Bundler
+- Ruby 3.4 (voir `.ruby-version` ; l'image Docker utilise 3.4.2) et Bundler
 - SQLite 3
 - libvips (variantes d'images Active Storage)
 
@@ -74,7 +75,7 @@ Pour créer le premier administrateur, fournissez `ADMIN_EMAIL` et `ADMIN_PASSWO
 ```bash
 # .env (ne pas versionner)
 ADMIN_EMAIL=admin@exemple.org
-ADMIN_PASSWORD=un-mot-de-passe-d-au-moins-12-caracteres
+ADMIN_PASSWORD=un-mot-de-passe-d-au-moins-12-caracteres   # 12 caractères recommandés (simple avertissement sinon)
 ```
 
 ```bash
@@ -97,7 +98,7 @@ L'import se fait aujourd'hui par **tâches Rake**, à partir d'un fichier CSV ou
 ```bash
 bin/rails equipment:preview FILE=parc.xlsx   # analyse seulement, ne crée rien
 bin/rails equipment:import  FILE=parc.xlsx   # importe (tout ou rien)
-
+ 
 # En production
 RAILS_ENV=production bin/rails equipment:import FILE=parc.xlsx
 ```
@@ -157,9 +158,8 @@ Statuts : **déclaré → qualifié → en cours → résolu → clôturé**. Un
 - La qualification exige une personne assignée, active et autre qu'un déclarant.
 - La clôture exige une cause racine.
 - Les incidents de nature sécurité ou radioprotection sont signalés comme pouvant imposer une déclaration obligatoire.
-- Un incident critique qualifié passe l'équipement « en panne ».
+- Un incident critique qualifié passe l'équipement « en panne ». À sa résolution, le statut de l'équipement est recalculé (voir [Interventions](#interventions)) ; rouvrir un incident critique remet l'équipement « en panne ».
 - On ne peut pas déclarer d'incident sur un équipement archivé.
-
 | Gravité | Définition | Prise en charge visée |
 | --- | --- | --- |
 | Critique | Équipement indisponible sans solution de repli, ou risque pour un patient ou le personnel | Quelques heures |
@@ -175,6 +175,7 @@ Statuts : **planifiée → en cours → terminée**, ou annulée. Une interventi
 - Une intervention terminée exige une date de fin et un rapport.
 - Le coût est saisi en euros et stocké en centimes ; la durée d'indisponibilité est en minutes.
 - Le statut de l'équipement suit les interventions : « en maintenance » tant qu'une intervention est en cours, puis retour « en service », ou « en panne » si un incident critique qualifié ou en cours n'est pas résolu. Un équipement en panne ou hors service n'est jamais modifié au démarrage.
+- À la résolution d'un incident critique, un équipement « en panne » repasse « en maintenance » si une intervention est en cours, « en service » s'il ne reste aucun autre incident critique ouvert, et reste « en panne » sinon. Les autres statuts (hors service, « en maintenance » posé à la main) ne sont jamais touchés.
 
 ## Documents techniques
 
@@ -191,7 +192,6 @@ Statuts : **planifiée → en cours → terminée**, ou annulée. Une interventi
 - Droits identiques à ceux de l'interface web.
 - Pagination `page` / `per_page` (25 par défaut, 100 au maximum), format d'erreur unique `{ "error": { "code", "message", "details" } }`, dates ISO 8601.
 - Spécification OpenAPI : [`openapi/v1.yaml`](openapi/v1.yaml), servie sans authentification sur `/api/v1/openapi.yaml`.
-
 | Ressource | Endpoints |
 | --- | --- |
 | Utilisateur courant | `GET /me` |
@@ -225,7 +225,6 @@ Le workflow GitHub Actions (`.github/workflows/ci.yml`) exécute à chaque pull 
 - `importmap audit` (dépendances JavaScript) ;
 - RuboCop (style) ;
 - la suite de tests (`bin/rails db:test:prepare test`).
-
 En local, `check.sh` lance RuboCop (avec correction automatique) puis les tests.
 
 ## Déploiement
@@ -278,6 +277,10 @@ Reste à faire pour le jalon 1 : interface de consultation du journal d'audit (l
 - Niveaux de criticité des équipements : faible, moyenne, haute (hypothèse à confirmer).
 - Politique de mot de passe (longueur minimale) à fixer avant la mise en service ; l'envoi d'e-mails de réinitialisation doit être configuré.
 - Mobile : PWA, Flutter, ou rien dans un premier temps.
+
+## Historique des modifications
+
+Les changements notables sont consignés dans [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence
 
